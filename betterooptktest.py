@@ -49,8 +49,8 @@ class App(ctk.CTk):
 		self.tk.call('wm', 'iconphoto', self._w, self.img)
 		self.data_analyzer = data_manipulator.data_manipulator()
 
-		# This list holds the filenames of the graphs that are displayed.
-		self.currently_displayed = []
+		# This list holds the filenames of the graphs that are displayed, along with their data
+		self.currently_displayed = {}
 		self.view_mode = 0	
 		self.fit_bound = [tk.IntVar(value=0), tk.IntVar(value=0)]
 	
@@ -98,7 +98,7 @@ class App(ctk.CTk):
 
 		self.fit_counter = ctk.CTkLabel(master = self.control_frame, textvar = self.fit_bound[0])
 		self.file_addition_selector = ctk.CTkOptionMenu(master = self.adding_frame, values=fnames)
-		self.file_selector = ctk.CTkOptionMenu(master = self.control_frame, values=self.currently_displayed)
+		self.file_selector = ctk.CTkOptionMenu(master = self.control_frame, values=list(self.currently_displayed.keys()))
 
 		# Put the widgets on the screen
 		self.redraw_widgets()
@@ -122,12 +122,12 @@ class App(ctk.CTk):
 		self.viewmode_button.pack()
 	
 	def delete_file(self,f):
-		self.currently_displayed.remove(f)
+		self.currently_displayed.pop(f)
 		self.plot(False)
 
 	def update(self):
 		self.file_selector.pack_forget()
-		self.file_selector.__init__(master = self.control_frame, values = self.currently_displayed)
+		self.file_selector.__init__(master = self.control_frame, values = list(self.currently_displayed.keys()))
 		self.file_selector.pack()
 
 	def incr(self,n):
@@ -145,7 +145,9 @@ class App(ctk.CTk):
 			self.view_mode = 0
 	
 	def add_new_graph(self):
-		self.currently_displayed.append(self.file_addition_selector.get())
+		f = self.file_addition_selector.get()
+		[x,y] = self.get_data(f)
+		self.currently_displayed.update({f: [x,y]})
 		self.plot(False)
 
 	def get_data(self, fname):
@@ -173,9 +175,9 @@ class App(ctk.CTk):
 		fig = Figure(figsize = (10, 10), dpi = 100)
 		plot1 = fig.add_subplot(111)
 
-		for fname in self.currently_displayed:
+		for data in self.currently_displayed.values():
 			# Take the data from the file given	
-			x,y = self.get_data(fname)		
+			[x,y] = data	
 
 			if self.view_mode == 0:
 				plot1.plot(x,y,'o')
@@ -191,7 +193,7 @@ class App(ctk.CTk):
 		self.canvas.draw()
 		self.canvas.get_tk_widget().pack()
 		toolbar = NavigationToolbar2Tk(self.canvas, self.graph_frame)
-		plot1.legend(self.currently_displayed)
+		plot1.legend(self.currently_displayed.keys())
 		self.canvas.get_tk_widget().pack()
 		self.update()
 
