@@ -23,17 +23,36 @@ class data_manipulator:
 		new_y /= float(len(data))
 		return [new_x, new_y]
 
+	# Takes the average of the data point itself and its neighbors 
+	def box_average(self, data):
+		new_y = []
+		for i in range(1, len(data[1])-1):
+			new_y.append((data[1][i-1] + data[1][i] + data[1][i+1])/3)
+		new_y = np.array(new_y)
+		return [data[0][1:-1], new_y]
+	
+	# Finds the floating potential by finding the largest negative value and smallest positive value and doing a linear fit between them to get the x-intercept.
+	def floating_potential(self, data):
+		a = data[1]
+		aa = np.absolute(a)
+		
+		i = np.where(aa == np.amin(aa))[0]
 
-"""	
-dm = data_manipulator()
+		x1 = 0
+		x2 = 0
+		y1 = 0
+		y2 = 0
+	
+		if a[i] < 0:
+			x1 = data[0][i]
+			y1 = a[i]
+			x2 = data[0][i+1]
+			y2 = a[i+1]
+		else:
+			x1 = data[0][i-1]
+			y1 = a[i-1]
+			x2 = data[0][i]
+			y2 = a[i]
 
-a = np.array([1,2,3,4,5,6,7,8])
-b = np.array([3,3,3,3,3,3,3,3])
-c = np.array([1,2,3,4,5,6,7,8])
-d = np.array([1,1,1,1,1,1,1,1])
-
-data1 = [a,b]
-data2 = [c,d]
-
-print(dm.average([data1, data2]))
-"""
+		v_float = x1 - y1 * (x2-x1)/(y2-y1)
+		return v_float
