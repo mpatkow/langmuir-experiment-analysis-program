@@ -12,6 +12,8 @@ import data_manipulator
 ctk.set_appearance_mode("Dark")  # Modes: system (default), light, dark
 ctk.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
 
+# TODO plt.style.use('dark_background')
+
 fnames = []
 sample_dir = sys.argv[1]
 for (dirpath, dirnames, filenames) in os.walk(sample_dir):
@@ -21,7 +23,10 @@ for (dirpath, dirnames, filenames) in os.walk(sample_dir):
 # TODO make it so that you can chose directories as well.
 # Averages
 # Try to update graph without redrawing the whole thing, messing up scales
+# Derivatives or other manipulations don't show up
+# Maybe try making it write to a csv file.
 # multiple labels in the selector frame are made for adding the same thing
+# vfloat 
 
 class App(ctk.CTk):
 	def __init__(self):
@@ -103,6 +108,16 @@ class App(ctk.CTk):
 			command = self.all,
 			variable = self.select_all,
 			text = "")
+		self.explorer_button = ctk.CTkButton(master = self.control_frame,
+			command = self.file_browser,
+			text = "explorer")
+		self.average_button = ctk.CTkButton(master = self.control_frame,
+			command = self.average,
+			text = "average")
+		self.floating_potential_button = ctk.CTkButton(master = self.control_frame,
+			command = self.floating,
+			text = "floating potential")
+		
 
 		self.fit_counter = ctk.CTkLabel(master = self.control_frame, textvar = self.fit_bound[0])
 		self.file_addition_selector = ctk.CTkOptionMenu(master = self.adding_frame, values=fnames)
@@ -112,8 +127,8 @@ class App(ctk.CTk):
 		self.redraw_widgets()
 
 	def redraw_widgets(self):
+		self.graph_frame.grid(row=0, column = 0,sticky = "ns")
 		self.control_frame.grid(row = 0, column = 1, padx = 10, pady = 10)
-		self.graph_frame.grid(row=0, column = 0)
 		self.adding_frame.grid(row=1, column = 0)
 		self.plot_button.grid(row=0, column=1)
 		self.selector_frame.grid(row = 0, column = 2)
@@ -134,6 +149,18 @@ class App(ctk.CTk):
 		self.legend_button.pack()
 		self.box_button.pack()
 		self.all_button.pack()
+		self.explorer_button.pack()	
+		self.average_button.pack()
+		self.floating_potential_button.pack()		
+
+	def file_browser(self):
+		fname = tk.filedialog.askopenfilename(initialdir = "/", title = "Select a File", filetypes = (("Text files","*.txt*"), ("all files","*.*")))
+		print(fname)
+
+	def floating(self):
+		fname = self.get_selected()[0]
+		print(self.data_analyzer.floating_potential(self.currently_displayed[fname]))	
+		
 
 	def all(self):
 		v = self.select_all.get()
@@ -175,12 +202,21 @@ class App(ctk.CTk):
 		self.plot()
 
 	def box_average(self):
-		try:
-			fname = self.file_selector.get()
-			data = self.data_analyzer.box_average(self.currently_displayed[fname])
-			self.currently_displayed.update({fname + "box_av" : data})
-		except KeyError:
-			print("\a")
+		for fname in self.get_selected():
+			try:
+				data = self.data_analyzer.box_average(self.currently_displayed[fname])
+				self.add_graph(fname + "_box_av", data[0], data[1])
+			except KeyError:
+				print("\a")
+		self.plot()
+	
+	def average(self):
+		data_to_average = []
+		for fname in self.get_selected():
+			data_to_average.append(self.currently_displayed[fname])
+		# TODO broken
+		data = self.data_analyzer.average(data_to_average)
+		self.add_graph("average", data[0], data[1])
 		self.plot()
 
 	def update(self):
@@ -206,6 +242,9 @@ class App(ctk.CTk):
 	def add_new_graph(self):
 		f = self.file_addition_selector.get()
 		[x,y] = self.get_data(f)
+		self.add_graph(f, x, y)
+
+	def add_graph(self, f, x, y):
 		self.currently_displayed.update({f: [x,y]})
 	
 		file_frame = ctk.CTkFrame(master = self.selector_frame)
@@ -222,12 +261,12 @@ class App(ctk.CTk):
 		cb.grid(row=0, column=1)	
 
 	def derivative(self):
-		try:		
-			fname = self.file_selector.get()
-			data = self.data_analyzer.derivative(self.currently_displayed[fname],1)
-			self.currently_displayed.update({fname + "_der" : data})
-		except KeyError:
-			print("\a")
+		for fname in self.get_selected():
+			try:		
+				data = self.data_analyzer.derivative(self.currently_displayed[fname],1)
+				self.add_graph(fname+"_der", data[0], data[1])
+			except KeyError:
+				print("\a")
 		self.plot()
 
 	def get_data(self, fname):
