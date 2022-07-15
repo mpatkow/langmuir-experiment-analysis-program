@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.signal import savgol_filter
 
 class data_manipulator:
 	def __init__(self):
@@ -56,3 +57,13 @@ class data_manipulator:
 
 		v_float = x1 - y1 * (x2-x1)/(y2-y1)
 		return v_float
+	
+	def ion_saturation_primitive(self, data):
+		return data[1][0]
+	
+	def ion_saturation_basic(self, data, isat_guess):
+		m,b = np.polyfit(data[0][:isat_guess], data[1][:isat_guess], 1)
+		return m*data[0] + b, data[1] - m*data[0] -b
+	
+	def savgol_smoothing(self, data):
+		return savgol_filter(data[1],51,3)
