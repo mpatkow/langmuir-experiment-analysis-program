@@ -24,9 +24,14 @@ for (dirpath, dirnames, filenames) in os.walk(sample_dir):
 # Averages
 # Try to update graph without redrawing the whole thing, messing up scales
 # Derivatives or other manipulations don't show up
+# Place select all button nicer
 # Maybe try making it write to a csv file.
 # multiple labels in the selector frame are made for adding the same thing
 # vfloat 
+# vspace
+# xi: = probe radius/ debye length
+# formula for debye using epsilong * KT/ne^2
+
 
 class App(ctk.CTk):
 	def __init__(self):
@@ -51,12 +56,23 @@ class App(ctk.CTk):
 		self.fit_bound = [tk.IntVar(value=0), tk.IntVar(value=0)]
 	
 		# Frames 
-		self.graph_frame = ctk.CTkFrame() 	# Holds the graph
-		self.control_frame = ctk.CTkFrame()	# Holds the controls for manipulating the graphs.
-		self.adding_frame = ctk.CTkFrame()	# Holds the controls for adding and removing files from the graph.
-		self.cursor_frame = ctk.CTkFrame(master = self.control_frame)	
-		self.selector_frame = ctk.CTkFrame()	
+		self.left_frame = ctk.CTkFrame()
+		self.right_frame = ctk.CTkFrame()
+
+		self.graph_frame = ctk.CTkFrame(master = self.left_frame) 	# Holds the graph
+		self.adding_frame = ctk.CTkFrame(master = self.left_frame)	# Holds the controls for adding and removing files from the graph.
+
+
+		self.control_frame = ctk.CTkFrame(master = self.right_frame)	# Holds the controls for manipulating the graphs.
+		self.selector_frame = ctk.CTkFrame(master = self.right_frame)	
 	
+		self.options_frame = ctk.CTkFrame(master = self.control_frame)
+		self.math_frame = ctk.CTkFrame(master = self.control_frame)
+
+
+		self.cursor_frame = ctk.CTkFrame(master = self.options_frame)	
+	
+
 		# Plots a new graph on the screen	
 		self.plot_button = ctk.CTkButton(master = self.adding_frame,
 			command = self.add_new_graph,
@@ -86,81 +102,127 @@ class App(ctk.CTk):
 			command = lambda: self.minu(100),
 			text = "<<<",
 			width = 5)
-		self.deletion_button = ctk.CTkButton(master = self.control_frame,
-			command = lambda: self.delete_file(self.file_selector.get()),
+		self.deletion_button = ctk.CTkButton(master = self.options_frame,
+			command = self.delete_file,
 	                text = "Delete")
-		self.viewmode_button = ctk.CTkButton(master = self.control_frame,
+		self.viewmode_button = ctk.CTkButton(master = self.options_frame,
 			command = self.vm_toggle,
 			text = "Viewmode")
-		self.derivative_button = ctk.CTkButton(master = self.control_frame,
+		self.derivative_button = ctk.CTkButton(master = self.math_frame,
 			command = self.derivative,
 			text = "f'")
-		self.scale_button = ctk.CTkButton(master = self.control_frame,
+		self.scale_button = ctk.CTkButton(master = self.options_frame,
 			command = self.toggle_graph_scale,
 			text = "lin/log")
-		self.legend_button = ctk.CTkButton(master = self.control_frame,
+		self.legend_button = ctk.CTkButton(master = self.options_frame,
 			command = self.toggle_legend,
 			text = "legend")
-		self.box_button = ctk.CTkButton(master = self.control_frame,
+		self.box_button = ctk.CTkButton(master = self.math_frame,
 			command = self.box_average,
 			text = "box average")
-		self.all_button = ctk.CTkCheckBox(master = self.control_frame,
+		self.all_button = ctk.CTkCheckBox(master = self.selector_frame,
 			command = self.all,
 			variable = self.select_all,
 			text = "")
-		self.explorer_button = ctk.CTkButton(master = self.control_frame,
+		self.explorer_button = ctk.CTkButton(master = self.adding_frame,
 			command = self.file_browser,
 			text = "explorer")
-		self.average_button = ctk.CTkButton(master = self.control_frame,
+		self.average_button = ctk.CTkButton(master = self.math_frame,
 			command = self.average,
 			text = "average")
-		self.floating_potential_button = ctk.CTkButton(master = self.control_frame,
+		self.floating_potential_button = ctk.CTkButton(master = self.math_frame,
 			command = self.floating,
 			text = "floating potential")
 		
+		self.basic_isat_button = ctk.CTkButton(master = self.math_frame,
+			command = self.basic_isat,
+			text = "basic isat")
+		self.savgol_button = ctk.CTkButton(master = self.math_frame,
+			command = self.savgol,
+			text = "savgol filter")
 
-		self.fit_counter = ctk.CTkLabel(master = self.control_frame, textvar = self.fit_bound[0])
+		self.fit_counter = ctk.CTkLabel(master = self.cursor_frame, textvar = self.fit_bound[0])
 		self.file_addition_selector = ctk.CTkOptionMenu(master = self.adding_frame, values=fnames)
-		self.file_selector = ctk.CTkOptionMenu(master = self.control_frame, values=list(self.currently_displayed.keys()))
 
 		# Put the widgets on the screen
 		self.redraw_widgets()
 
 	def redraw_widgets(self):
-		self.graph_frame.grid(row=0, column = 0,sticky = "ns")
-		self.control_frame.grid(row = 0, column = 1, padx = 10, pady = 10)
-		self.adding_frame.grid(row=1, column = 0)
+		self.grid_columnconfigure(0,weight=1)
+		self.grid_columnconfigure(1,weight=1)
+		self.grid_rowconfigure(0,weight=1)
+
+		self.left_frame.grid(row=0, column = 0, sticky="nsew")
+		self.right_frame.grid(row=0, column = 1, sticky="nsew")
+		
+		self.left_frame.grid_rowconfigure(0, weight = 4)
+		self.left_frame.grid_rowconfigure(1, weight = 1)
+		self.left_frame.grid_columnconfigure(0, weight = 1)
+		
+		self.graph_frame.grid(row=0, column = 0, sticky = "nsew")
+		self.adding_frame.grid(row=1, column = 0, sticky = "ew")
+	
+		self.file_addition_selector.grid(row=0, column=0)
 		self.plot_button.grid(row=0, column=1)
-		self.selector_frame.grid(row = 0, column = 2)
+		self.explorer_button.grid(row=0, column=2)	
+		
+		self.right_frame.grid_columnconfigure(0, weight=1)
+		self.right_frame.grid_columnconfigure(1, weight=1)
+		self.right_frame.grid_rowconfigure(0, weight=1)
+		self.selector_frame.grid(row=0, column=0, sticky = "nsew")
+		self.control_frame.grid(row=0, column=1, sticky = "nswe")
+
+		self.control_frame.grid_columnconfigure(0, weight=1)
+		self.control_frame.grid_rowconfigure(0, weight=1)
+		self.control_frame.grid_rowconfigure(1, weight=2)
+
+		self.options_frame.grid(row=0, column=0)
+		self.math_frame.grid(row=1, column=0)	
+
+		self.all_button.pack()
+		self.deletion_button.pack()
+		self.viewmode_button.pack()
+		self.scale_button.pack()	
+		self.legend_button.pack()
+
+		self.derivative_button.pack()
+		self.box_button.pack()
+		self.average_button.pack()
+		self.floating_potential_button.pack()		
+		self.basic_isat_button.pack()
+		self.savgol_button.pack()
+		
 		self.cursor_frame.pack()
 		self.minus_button_el.grid(row=0,column=0)
 		self.minus_button_l.grid(row=0,column=1)
 		self.minus_button.grid(row=0,column=2)
-		self.plus_button.grid(row=0,column=3)
-		self.plus_button_l.grid(row=0,column=4)
-		self.plus_button_el.grid(row=0,column=5)
-		self.fit_counter.pack()
-		self.file_addition_selector.grid(row=0, column=0)
-		self.file_selector.pack()
-		self.deletion_button.pack()
-		self.viewmode_button.pack()
-		self.derivative_button.pack()
-		self.scale_button.pack()	
-		self.legend_button.pack()
-		self.box_button.pack()
-		self.all_button.pack()
-		self.explorer_button.pack()	
-		self.average_button.pack()
-		self.floating_potential_button.pack()		
+		self.plus_button.grid(row=0,column=4)
+		self.plus_button_l.grid(row=0,column=5)
+		self.plus_button_el.grid(row=0,column=6)
+		self.fit_counter.grid(column=3)
+				
+	def savgol(self):
+		fname = self.get_selected()[0]
+		smoothed = self.data_analyzer.savgol_smoothing(self.currently_displayed[fname])	
+		self.add_graph(fname + "_sav", self.currently_displayed[fname][0], smoothed)
 
+	# Get rid of the try except
+	def basic_isat(self):
+		fname = self.get_selected()[0]
+		isat,electron_current = self.data_analyzer.ion_saturation_basic(self.currently_displayed[fname],self.fit_bound[0].get())	
+		self.add_graph(fname + "_isat", self.currently_displayed[fname][0], isat)
+		self.add_graph(fname + "_ecurr", self.currently_displayed[fname][0], electron_current)
+	# TODO TODO TODO Broken, problem with directories
 	def file_browser(self):
 		fname = tk.filedialog.askopenfilename(initialdir = "/", title = "Select a File", filetypes = (("Text files","*.txt*"), ("all files","*.*")))
-		print(fname)
+		[x,y] = self.get_data(fname)
+		self.add_graph(fname, x, y)
 
 	def floating(self):
 		fname = self.get_selected()[0]
-		print(self.data_analyzer.floating_potential(self.currently_displayed[fname]))	
-		
+		asdfasdf = self.data_analyzer.floating_potential(self.currently_displayed[fname])
+		print(asdfasdf)
+		return asdfasdf	
 
 	def all(self):
 		v = self.select_all.get()
@@ -189,7 +251,7 @@ class App(ctk.CTk):
 
 		return selected
 	
-	def delete_file(self,f):
+	def delete_file(self):
 		for s in self.get_selected():
 			try:
 				self.currently_displayed.pop(s)
@@ -218,11 +280,6 @@ class App(ctk.CTk):
 		data = self.data_analyzer.average(data_to_average)
 		self.add_graph("average", data[0], data[1])
 		self.plot()
-
-	def update(self):
-		self.file_selector.pack_forget()
-		self.file_selector.__init__(master = self.control_frame, values = list(self.currently_displayed.keys()))
-		self.file_selector.pack()
 
 	def incr(self,n):
 		self.fit_bound[0].set(self.fit_bound[0].get()+n)		
@@ -284,7 +341,7 @@ class App(ctk.CTk):
 	
 	def plot(self):
 		# Remake the graph frame. Probably a better way than doing this.	
-		self.graph_frame = ctk.CTkFrame(width = 500, height = 500)
+		self.graph_frame = ctk.CTkFrame(master=self.left_frame)
 
 		# The figure that will contain the plot and adding the plot
 		fig = Figure(figsize = (10, 10), dpi = 100)
@@ -294,7 +351,6 @@ class App(ctk.CTk):
 			plot1.set_yscale("log")			
 		else:
 			plot1.set_yscale("linear")
-		self.update()
 
 		for data in self.currently_displayed.values():
 			# Take the data from the file given	
@@ -305,8 +361,6 @@ class App(ctk.CTk):
 			else:
 				plot1.plot(x,y)
 			
-			plot1.plot([x[self.fit_bound[0].get()]], [y[self.fit_bound[0].get()]], marker="o", markersize=20, markeredgecolor="red") 
-		
 		self.canvas = FigureCanvasTkAgg(fig, master = self.graph_frame)
 		self.canvas.draw()
 		self.canvas.get_tk_widget().pack()
@@ -315,7 +369,7 @@ class App(ctk.CTk):
 			plot1.legend(self.currently_displayed.keys())
 		self.canvas.get_tk_widget().pack()
 
-		self.graph_frame.grid(row=0, column = 0)
+		self.graph_frame.grid(row=0, column = 0, sticky = "nsew")
 	
 if __name__ == "__main__":
 	app = App()
