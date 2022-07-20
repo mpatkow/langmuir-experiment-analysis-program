@@ -3,7 +3,6 @@ import pyvisa
 rm = pyvisa.ResourceManager()
 
 my_instrument = rm.open_resource('GPIB0::14::INSTR')
-print(my_instrument.query('*IDN?'))
 
 my_instrument.baud_rate = 19200
 
