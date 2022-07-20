@@ -3,7 +3,6 @@ import pyvisa
 import os
 from matplotlib import pyplot as plt
 import numpy as np
-import tqdm
 
 # When Keithley sends terminator, quit reading
 terminator = '\n'
@@ -37,7 +36,7 @@ fname = "sample%sR.txt" % i
 f = open(fname, "a")
 
 
-for loop_num in tqdm.tqdm(range(divisions)):
+for loop_num in range(divisions):
 	rm = pyvisa.ResourceManager()
 	intr = rm.open_resource('ASRL/dev/cu.usbserial-1410::INSTR')
 	intr.baud_rate = 9600 
