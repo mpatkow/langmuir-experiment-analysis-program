@@ -3,15 +3,16 @@ import pyvisa
 import os
 from matplotlib import pyplot as plt
 import numpy as np
+import tqdm
 
 # When Keithley sends terminator, quit reading
 terminator = '\n'
 
-# Keithley can only store up to 80 data points per set. We use 75 to not deal with any OBOEs :D 
-# was -50,60,11,75
-starting_voltage = 	 -50 	# Sweep start and end values normally at -50 
-ending_voltage   = 	 60	
-divisions        =	 11 	# The higher this number is, the closer together and more data points, but longer run time
+# Keithley can only store up to 80 data points per set. We use 75 to not deal with any OBOEs :D
+# was -50,60,11,60,0.005
+starting_voltage = -10 # Sweep start and end values normally at -50
+ending_voltage   = 20
+divisions        = 3 # The higher this number is, the closer together and more data points, but longer run time
 n_sec = 60
 max_curr = 0.005
 
@@ -22,31 +23,26 @@ for i in range(divisions):
 	starting_voltages.append(int(starting_voltage + (ending_voltage-starting_voltage)/(divisions) * i))
 	ending_voltages.append(int(starting_voltage + (ending_voltage-starting_voltage)/(divisions) * (i+1))+2)
 
+rm = pyvisa.ResourceManager()
+intr = rm.open_resource('GPIB0::24::INSTR')
+intr.baud_rate = 9600
+intr.timeout = 25000
+intr.chunk_size = 102400
+intr.open()
+intr.read_termination = terminator
+intr.write_termination = terminator
+del intr.timeout
 
-# EXPERIMENTAL TODO
-#starting_voltages = [-5,5,15,25,35,45,55]
-#ending_voltages = [10,20,30,40,50,60,70]
-#divisions = 7
-
-# Make a new file with name sample<#+1> 
+# Make a new file with name sample<#+1>
 i = 0
-while os.path.exists("sample%s.txt" % i):
+while os.path.exists("sample%s.csv" % i):
 	i += 1
-fname = "sample%sR.txt" % i
+	fname = "sample%sR.csv" % i
 f = open(fname, "a")
 
 
-for loop_num in range(divisions):
-	rm = pyvisa.ResourceManager()
-	intr = rm.open_resource('ASRL/dev/cu.usbserial-1410::INSTR')
-	intr.baud_rate = 9600 
-	intr.timeout = 25000
-	intr.chunk_size = 102400
-	intr.open()
-	intr.read_termination = terminator
-	intr.write_termination = terminator
-	del intr.timeout
-	
+for loop_num in tqdm.tqdm(range(divisions)):
+
 
 	starting_voltage = starting_voltages[loop_num]
 	ending_voltage = ending_voltages[loop_num]
@@ -89,7 +85,7 @@ for loop_num in range(divisions):
 	intr.write(":INIT")
 
 	# TRY REDUCING THIS TODO
-	
+
 	time.sleep(6)
 
 	intr.write(":TRAC:DATA?")
@@ -111,8 +107,7 @@ for loop_num in range(divisions):
 	intr.write(":*CLS")
 	intr.write(":*SRE 0")
 
-	intr.close()
-
+intr.close()
 f.close()
 
 # Now we implement the fixing of the data, which is currently stored raw in a file.
@@ -121,14 +116,23 @@ f = open(fname, "r")
 vi_data = f.readlines()
 f.close()
 
+vi_data = vi_data.split(",")
+vs = [vi_data[2*i] for i in range(int(len(vi_data)/2))]
+
+for i in range(len(vi_data)-1, -1, -1):
+	if vi_data.count(vi_data[i]) > 1 and i % 2 == 0:
+		del vi_data[i+1]
+		del vi_data[i]
+
 # Each element of the vi_data is a string. Take off the last character of the string (a terminator), and append a comma.
 new_data = ""
-for d in vi_data:
-	new_data += d[:-1]
+for d in range(len(vi_data)/2):
+	new_data += vi_data[d]
 	new_data += ","
+	new_data += vi_data[d+1]
+	new_data += "\n"
 
-new_data = new_data[:-1] # Remove extra comma at the end
-
-f = open("sample%s.txt" % i, "w")
+f = open("sample%s.csv" % i, "w")
 f.write(new_data)
 os.remove(fname)
+
