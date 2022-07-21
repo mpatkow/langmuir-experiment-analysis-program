@@ -1,4 +1,0 @@
-tqdm
-customtkinter
-numpy
-matplotlib
