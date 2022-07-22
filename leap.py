@@ -29,7 +29,9 @@ except:
 # save graph and data
 # fix gui
 # deal with multiple files
-
+# error bounds
+# set lower bound on isat not only upper
+                                           
 class App(ctk.CTk):
 	def __init__(self):
 		super().__init__()
@@ -227,7 +229,7 @@ class App(ctk.CTk):
 
 	def savgol(self):
 		fname = self.get_selected()[0]
-		smoothed = self.data_analyzer.savgol_smoothing(self.currently_displayed[fname])	
+		smoothed = self.data_analyzer.savgol_smoothing(self.currently_displayed[fname])
 		self.add_graph(fname + "_sav", self.currently_displayed[fname][0], smoothed)
 
 	# Get rid of the try except
@@ -311,7 +313,7 @@ class App(ctk.CTk):
 		self.plot()
 
 	def incr(self,n):
-		self.fit_bound[0].set(self.fit_bound[0].get()+n)	
+		self.fit_bound[0].set(self.fit_bound[0].get()+n)		
 		self.plot()
 
 	def minu(self,n):
