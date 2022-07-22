@@ -1,4 +1,4 @@
-# langmuir-experiment-analyzer-program
+# langmuir-experiment-analysis-program
 
 
 ## Dependencies:
