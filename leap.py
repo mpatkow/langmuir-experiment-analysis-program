@@ -12,26 +12,23 @@ import data_manipulator
 ctk.set_appearance_mode("Dark")  # Modes: system (default), light, dark
 ctk.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
 
-# TODO plt.style.use('dark_background')
+plt.style.use("default")
 
-fnames = []
-sample_dir = sys.argv[1]
-for (dirpath, dirnames, filenames) in os.walk(sample_dir):
-	fnames.extend(filenames)
-	break
+# Optional starting directory
+try:
+	starting_dir = sys.argv[1]
+except:
+	starting_dir = "~"
 
-# TODO make it so that you can chose directories as well.
-# Averages
 # Try to update graph without redrawing the whole thing, messing up scales
 # Derivatives or other manipulations don't show up
-# Place select all button nicer
 # Maybe try making it write to a csv file.
-# multiple labels in the selector frame are made for adding the same thing
-# vfloat 
 # vspace
 # xi: = probe radius/ debye length
 # formula for debye using epsilong * KT/ne^2
-
+# save graph and data
+# fix gui
+# deal with multiple files
 
 class App(ctk.CTk):
 	def __init__(self):
@@ -54,7 +51,8 @@ class App(ctk.CTk):
 		self.select_all = tk.IntVar()
 		self.legend_visibility = True
 		self.fit_bound = [tk.IntVar(value=0), tk.IntVar(value=0)]
-	
+		self.cursor_positions = []	
+
 		# Frames 
 		self.left_frame = ctk.CTkFrame()
 		self.right_frame = ctk.CTkFrame()
@@ -65,19 +63,15 @@ class App(ctk.CTk):
 
 		self.control_frame = ctk.CTkFrame(master = self.right_frame)	# Holds the controls for manipulating the graphs.
 		self.selector_frame = ctk.CTkFrame(master = self.right_frame)	
+		self.select_all_frame = ctk.CTkFrame(master = self.selector_frame)
 	
 		self.options_frame = ctk.CTkFrame(master = self.control_frame)
 		self.math_frame = ctk.CTkFrame(master = self.control_frame)
 
 
 		self.cursor_frame = ctk.CTkFrame(master = self.options_frame)	
-	
 
-		# Plots a new graph on the screen	
-		self.plot_button = ctk.CTkButton(master = self.adding_frame,
-			command = self.add_new_graph,
-			text = "Plot", 
-			width = 10)
+
 		self.plus_button = ctk.CTkButton(master = self.cursor_frame,
 			command = lambda: self.incr(1),
 			text = ">",
@@ -120,7 +114,7 @@ class App(ctk.CTk):
 		self.box_button = ctk.CTkButton(master = self.math_frame,
 			command = self.box_average,
 			text = "box average")
-		self.all_button = ctk.CTkCheckBox(master = self.selector_frame,
+		self.select_all_button = ctk.CTkCheckBox(master = self.select_all_frame,
 			command = self.all,
 			variable = self.select_all,
 			text = "")
@@ -140,9 +134,18 @@ class App(ctk.CTk):
 		self.savgol_button = ctk.CTkButton(master = self.math_frame,
 			command = self.savgol,
 			text = "savgol filter")
-
+		self.eedf_button = ctk.CTkButton(master = self.math_frame,
+			command = self.eedf,
+			text = "EEDF")
+		self.plasma_potential_button = ctk.CTkButton(master= self.math_frame,
+			command = self.plasma_potential,
+			text = "plasma potential")
+		self.absolute_button = ctk.CTkButton(master = self.math_frame,
+			command = self.absolute_v,
+			text = "|f|")
+		
 		self.fit_counter = ctk.CTkLabel(master = self.cursor_frame, textvar = self.fit_bound[0])
-		self.file_addition_selector = ctk.CTkOptionMenu(master = self.adding_frame, values=fnames)
+		self.select_all_label = ctk.CTkLabel(master = self.select_all_frame, text = "Select All:")
 
 		# Put the widgets on the screen
 		self.redraw_widgets()
@@ -162,9 +165,7 @@ class App(ctk.CTk):
 		self.graph_frame.grid(row=0, column = 0, sticky = "nsew")
 		self.adding_frame.grid(row=1, column = 0, sticky = "ew")
 	
-		self.file_addition_selector.grid(row=0, column=0)
-		self.plot_button.grid(row=0, column=1)
-		self.explorer_button.grid(row=0, column=2)	
+		self.explorer_button.pack()
 		
 		self.right_frame.grid_columnconfigure(0, weight=1)
 		self.right_frame.grid_columnconfigure(1, weight=1)
@@ -179,7 +180,10 @@ class App(ctk.CTk):
 		self.options_frame.grid(row=0, column=0)
 		self.math_frame.grid(row=1, column=0)	
 
-		self.all_button.pack()
+		self.select_all_frame.pack()
+		self.select_all_label.grid(row=0, column=0)
+		self.select_all_button.grid(row=0, column=1)	
+
 		self.deletion_button.pack()
 		self.viewmode_button.pack()
 		self.scale_button.pack()	
@@ -191,7 +195,10 @@ class App(ctk.CTk):
 		self.floating_potential_button.pack()		
 		self.basic_isat_button.pack()
 		self.savgol_button.pack()
-		
+		self.eedf_button.pack()
+		self.plasma_potential_button.pack()
+		self.absolute_button.pack()		
+
 		self.cursor_frame.pack()
 		self.minus_button_el.grid(row=0,column=0)
 		self.minus_button_l.grid(row=0,column=1)
@@ -199,8 +206,25 @@ class App(ctk.CTk):
 		self.plus_button.grid(row=0,column=4)
 		self.plus_button_l.grid(row=0,column=5)
 		self.plus_button_el.grid(row=0,column=6)
-		self.fit_counter.grid(column=3)
+		self.fit_counter.grid(row=0,column=3)
+	
+	def absolute_v(self):
+		fname = self.get_selected()[0]
+		a = self.data_analyzer.absolute_val(self.currently_displayed[fname])[1]
+		self.add_graph(fname + "_sav", self.currently_displayed[fname][0], a)
+
+	def plasma_potential(self):
+		fname = self.get_selected()[0]
+		asdfasdf = self.data_analyzer.plasma_potential(self.currently_displayed[fname])
+		print(asdfasdf)
+		return asdfasdf	
 				
+	def eedf(self):
+		fname = self.get_selected()[0]
+		print(self.currently_displayed[fname])
+		ee = self.data_analyzer.druyvesteyn(self.currently_displayed[fname],8)	
+		self.add_graph(fname + "_ee", self.currently_displayed[fname][0], ee)
+
 	def savgol(self):
 		fname = self.get_selected()[0]
 		smoothed = self.data_analyzer.savgol_smoothing(self.currently_displayed[fname])	
@@ -212,16 +236,21 @@ class App(ctk.CTk):
 		isat,electron_current = self.data_analyzer.ion_saturation_basic(self.currently_displayed[fname],self.fit_bound[0].get())	
 		self.add_graph(fname + "_isat", self.currently_displayed[fname][0], isat)
 		self.add_graph(fname + "_ecurr", self.currently_displayed[fname][0], electron_current)
-	# TODO TODO TODO Broken, problem with directories
+
 	def file_browser(self):
-		fname = tk.filedialog.askopenfilename(initialdir = "/", title = "Select a File", filetypes = (("Text files","*.txt*"), ("all files","*.*")))
-		[x,y] = self.get_data(fname)
-		self.add_graph(fname, x, y)
+		try:
+			fname = tk.filedialog.askopenfilename(initialdir = starting_dir, title = "Select a File", filetypes = [("data files", "*.txt"), ("csv files", "*.csv"), ("all files","*.*")]) 
+			if fname not in self.selector_display.keys():
+				[x,y] = self.get_data(fname)
+				self.add_graph(fname, x, y)
+		except:
+			pass
 
 	def floating(self):
 		fname = self.get_selected()[0]
 		asdfasdf = self.data_analyzer.floating_potential(self.currently_displayed[fname])
-		print(asdfasdf)
+		self.cursor_positions.append(asdfasdf[0])
+		self.plot()
 		return asdfasdf	
 
 	def all(self):
@@ -282,7 +311,7 @@ class App(ctk.CTk):
 		self.plot()
 
 	def incr(self,n):
-		self.fit_bound[0].set(self.fit_bound[0].get()+n)		
+		self.fit_bound[0].set(self.fit_bound[0].get()+n)	
 		self.plot()
 
 	def minu(self,n):
@@ -307,7 +336,7 @@ class App(ctk.CTk):
 		file_frame = ctk.CTkFrame(master = self.selector_frame)
 
 		cb_value = tk.IntVar()
-		label = ctk.CTkLabel(master = file_frame, text = f)
+		label = ctk.CTkLabel(master = file_frame, text = f.split("/")[-1])
 		cb = ctk.CTkCheckBox(master = file_frame, text = "",variable = cb_value)
 		
 		self.selector_display.update({f: [file_frame,cb_value]})
@@ -327,7 +356,7 @@ class App(ctk.CTk):
 		self.plot()
 
 	def get_data(self, fname):
-		f = open(sys.argv[1] + "/" + fname, "r")
+		f = open(fname, "r")
 		vi_data = f.readlines()
 		f.close()
 		
@@ -360,7 +389,10 @@ class App(ctk.CTk):
 				plot1.plot(x,y,'o')
 			else:
 				plot1.plot(x,y)
-			
+
+		for pos in self.cursor_positions:
+			plot1.axvline(x=pos,ls="--")			
+	
 		self.canvas = FigureCanvasTkAgg(fig, master = self.graph_frame)
 		self.canvas.draw()
 		self.canvas.get_tk_widget().pack()
