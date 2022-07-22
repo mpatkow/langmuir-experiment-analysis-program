@@ -67,3 +67,15 @@ class data_manipulator:
 	
 	def savgol_smoothing(self, data):
 		return savgol_filter(data[1],51,3)
+	
+	def druyvesteyn(self, data, vp):
+		d = self.derivative(data, 2)[1]
+		return d * (vp-data[0])**0.5
+
+	def plasma_potential(self, data):
+		data_der = self.derivative(data, 1)
+		i = np.argmax(data_der[1])
+		return data[0][i]
+	
+	def absolute_val(self, data):
+		return [data[0], np.absolute(data[1])]
