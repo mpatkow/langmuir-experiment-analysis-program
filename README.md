@@ -1,20 +1,13 @@
 # langmuir-experiment-analyzer-program
 
 
-Dependencies:
+## Dependencies:
 
-Custom tkinter:
+Custom tkinter: https://github.com/TomSchimansky/CustomTkinter
+Matplotlib: https://matplotlib.org/stable/users/installing/index.html
+Scipy: https://scipy.org/install/
 
-https://github.com/TomSchimansky/CustomTkinter
+For data recording only:
+PyVisa: https://pypi.org/project/PyVISA/
+Tqdm: https://tqdm.github.io/
 
-Matplotlib:
-
-https://matplotlib.org/stable/users/installing/index.html
-
-Scipy:
-
-https://scipy.org/install/
-
-PyVisa (for data recording):
-
-https://pypi.org/project/PyVISA/
