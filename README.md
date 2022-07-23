@@ -1,7 +1,5 @@
 # langmuir-experiment-analysis-program
 
-Python 3.9 or higher
-
 ## Dependencies:
 
 Custom tkinter: https://github.com/TomSchimansky/CustomTkinter  
