@@ -20,6 +20,11 @@ try:
 except:
 	starting_dir = "~"
 
+# Add in cursor system
+# When adding a product of an original graph it is possible to add multiples. Fix this.
+# Point by point not working
+# Add multiple graphs at the same tine in explorer
+# Before first data need to move graph fix this to make it less annoying
 # Try to update graph without redrawing the whole thing, messing up scales
 # Derivatives or other manipulations don't show up
 # Maybe try making it write to a csv file.
@@ -31,7 +36,8 @@ except:
 # deal with multiple files
 # error bounds
 # set lower bound on isat not only upper
-                                           
+# Delete anything draastically out of average
+
 class App(ctk.CTk):
 	def __init__(self):
 		super().__init__()
@@ -48,12 +54,13 @@ class App(ctk.CTk):
 		# This list holds the filenames of the graphs that are displayed, along with their data
 		self.currently_displayed = {}
 		self.selector_display = {}
-		self.view_mode = 0	
 		self.lin_log = 0
+		self.next_index = 0
 		self.select_all = tk.IntVar()
-		self.legend_visibility = True
+		self.legend_visibility = False
 		self.fit_bound = [tk.IntVar(value=0), tk.IntVar(value=0)]
 		self.cursor_positions = []	
+		self.graph_indexes = {}
 
 		# Frames 
 		self.left_frame = ctk.CTkFrame()
@@ -73,6 +80,12 @@ class App(ctk.CTk):
 
 		self.cursor_frame = ctk.CTkFrame(master = self.options_frame)	
 
+		# The figure that will contain the plot and adding the plot
+		self.fig = Figure(figsize = (7,7), dpi = 100)
+		self.plot1 = self.fig.add_subplot(111)
+		self.canvas = FigureCanvasTkAgg(self.fig, master = self.graph_frame)
+		self.toolbar = NavigationToolbar2Tk(self.canvas, self.graph_frame)
+		self.canvas.get_tk_widget().pack()
 
 		self.plus_button = ctk.CTkButton(master = self.cursor_frame,
 			command = lambda: self.incr(1),
@@ -101,9 +114,6 @@ class App(ctk.CTk):
 		self.deletion_button = ctk.CTkButton(master = self.options_frame,
 			command = self.delete_file,
 	                text = "Delete")
-		self.viewmode_button = ctk.CTkButton(master = self.options_frame,
-			command = self.vm_toggle,
-			text = "Viewmode")
 		self.derivative_button = ctk.CTkButton(master = self.math_frame,
 			command = self.derivative,
 			text = "f'")
@@ -187,7 +197,6 @@ class App(ctk.CTk):
 		self.select_all_button.grid(row=0, column=1)	
 
 		self.deletion_button.pack()
-		self.viewmode_button.pack()
 		self.scale_button.pack()	
 		self.legend_button.pack()
 
@@ -229,7 +238,7 @@ class App(ctk.CTk):
 
 	def savgol(self):
 		fname = self.get_selected()[0]
-		smoothed = self.data_analyzer.savgol_smoothing(self.currently_displayed[fname])
+		smoothed = self.data_analyzer.savgol_smoothing(self.currently_displayed[fname])	
 		self.add_graph(fname + "_sav", self.currently_displayed[fname][0], smoothed)
 
 	# Get rid of the try except
@@ -241,10 +250,11 @@ class App(ctk.CTk):
 
 	def file_browser(self):
 		try:
-			fname = tk.filedialog.askopenfilename(initialdir = starting_dir, title = "Select a File", filetypes = [("data files", "*.txt"), ("csv files", "*.csv"), ("all files","*.*")]) 
-			if fname not in self.selector_display.keys():
-				[x,y] = self.get_data(fname)
-				self.add_graph(fname, x, y)
+			fnames = tk.filedialog.askopenfilenames(initialdir = starting_dir, title = "Select a File", filetypes = [("data files", "*.txt"), ("csv files", "*.csv"), ("all files","*.*")]) 
+			for fname in fnames:
+				if fname not in self.selector_display.keys():
+					[x,y] = self.get_data(fname)
+					self.add_graph(fname, x, y)
 		except:
 			pass
 
@@ -252,7 +262,7 @@ class App(ctk.CTk):
 		fname = self.get_selected()[0]
 		asdfasdf = self.data_analyzer.floating_potential(self.currently_displayed[fname])
 		self.cursor_positions.append(asdfasdf[0])
-		self.plot()
+		self.canvas.draw()
 		return asdfasdf	
 
 	def all(self):
@@ -263,46 +273,40 @@ class App(ctk.CTk):
 	def toggle_legend(self):
 		if self.legend_visibility == False:
 			self.legend_visibility = True
+			self.plot1.legend(self.currently_displayed.keys())
 		elif self.legend_visibility == True:
 			self.legend_visibility = False
-		self.plot()
+			self.plot1.get_legend().remove()
+		self.canvas.draw()
 
 	def toggle_graph_scale(self):
 		if self.lin_log == 0:
 			self.lin_log = 1
+			self.plot1.set_yscale("log")			
 		elif self.lin_log == 1:
 			self.lin_log = 0
-		self.plot()
+			self.plot1.set_yscale("linear")
+		self.canvas.draw()
 
 	def get_selected(self):
 		selected = []
 		for key in self.selector_display:
 			if self.selector_display[key][0].winfo_children()[1].get() == 1:
 				selected.append(key)
-
 		return selected
-	
-	def delete_file(self):
-		for s in self.get_selected():
-			try:
-				self.currently_displayed.pop(s)
-				self.selector_display[s][0].pack_forget()
-				self.selector_display[s][0].destroy()
-				self.selector_display.pop(s)	
-
-			except KeyError:
-				print("\a")
-		self.plot()
 
 	def box_average(self):
 		for fname in self.get_selected():
 			try:
 				data = self.data_analyzer.box_average(self.currently_displayed[fname])
-				self.add_graph(fname + "_box_av", data[0], data[1])
+				prelim_fname = fname.split("/")[-1].split(".")[0] + "_box." + fname.split("/")[-1].split(".")[1]
+				if prelim_fname not in list(self.graph_indexes.keys()):
+					self.add_graph(prelim_fname, data[0], data[1])
+
 			except KeyError:
 				print("\a")
-		self.plot()
-	
+
+	# BETTER NAMES	
 	def average(self):
 		data_to_average = []
 		for fname in self.get_selected():
@@ -310,52 +314,23 @@ class App(ctk.CTk):
 		# TODO broken
 		data = self.data_analyzer.average(data_to_average)
 		self.add_graph("average", data[0], data[1])
-		self.plot()
 
 	def incr(self,n):
 		self.fit_bound[0].set(self.fit_bound[0].get()+n)		
-		self.plot()
 
 	def minu(self,n):
 		self.fit_bound[0].set(self.fit_bound[0].get()-n)
-		self.plot()
-	
-	def vm_toggle(self):	
-		if self.view_mode == 0:
-			self.view_mode = 1
-		elif self.view_mode == 1:
-			self.view_mode = 0
-		self.plot()
-	
-	def add_new_graph(self):
-		f = self.file_addition_selector.get()
-		[x,y] = self.get_data(f)
-		self.add_graph(f, x, y)
-
-	def add_graph(self, f, x, y):
-		self.currently_displayed.update({f: [x,y]})
-	
-		file_frame = ctk.CTkFrame(master = self.selector_frame)
-
-		cb_value = tk.IntVar()
-		label = ctk.CTkLabel(master = file_frame, text = f.split("/")[-1])
-		cb = ctk.CTkCheckBox(master = file_frame, text = "",variable = cb_value)
-		
-		self.selector_display.update({f: [file_frame,cb_value]})
-
-		self.plot()
-		file_frame.pack()
-		label.grid(row=0, column=0)
-		cb.grid(row=0, column=1)	
 
 	def derivative(self):
 		for fname in self.get_selected():
 			try:		
 				data = self.data_analyzer.derivative(self.currently_displayed[fname],1)
-				self.add_graph(fname+"_der", data[0], data[1])
+				prelim_fname = fname.split("/")[-1].split(".")[0] + "_der." + fname.split("/")[-1].split(".")[1]
+				if prelim_fname not in list(self.graph_indexes.keys()):
+					self.add_graph(prelim_fname, data[0], data[1])
 			except KeyError:
 				print("\a")
-		self.plot()
+
 
 	def get_data(self, fname):
 		f = open(fname, "r")
@@ -369,42 +344,57 @@ class App(ctk.CTk):
 		y = np.array([float(vi_data[i]) for i in range(len(vi_data)) if i % 2 == 1])
 		
 		return x,y	
+
+	def add_graph(self, f, x, y):
+		self.currently_displayed.update({f: [x,y]})
 	
-	def plot(self):
-		# Remake the graph frame. Probably a better way than doing this.	
-		self.graph_frame = ctk.CTkFrame(master=self.left_frame)
+		file_frame = ctk.CTkFrame(master = self.selector_frame)
 
-		# The figure that will contain the plot and adding the plot
-		fig = Figure(figsize = (10, 10), dpi = 100)
-		plot1 = fig.add_subplot(111)
+		cb_value = tk.IntVar()
+		label = ctk.CTkLabel(master = file_frame, text = f.split("/")[-1])
+		cb = ctk.CTkCheckBox(master = file_frame, text = "",variable = cb_value)
+		
+		self.selector_display.update({f: [file_frame,cb_value]})
+		self.update_next_index()
+		self.graph_indexes.update({f: self.next_index})
 
-		if self.lin_log == 1:
-			plot1.set_yscale("log")			
-		else:
-			plot1.set_yscale("linear")
+		self.plot(x,y)
+		file_frame.pack()
+		label.grid(row=0, column=0)
+		cb.grid(row=0, column=1)	
 
-		for data in self.currently_displayed.values():
-			# Take the data from the file given	
-			[x,y] = data	
+	def update_next_index(self):
+		indexes = list(self.graph_indexes.values())
+		indexes.sort()
+		i=0
+		while i in indexes:
+			i += 1	
 
-			if self.view_mode == 0:
-				plot1.plot(x,y,'o')
-			else:
-				plot1.plot(x,y)
+		self.next_index = i
 
-		for pos in self.cursor_positions:
-			plot1.axvline(x=pos,ls="--")			
-	
-		self.canvas = FigureCanvasTkAgg(fig, master = self.graph_frame)
+	def delete_file(self):
+		for s in self.get_selected():
+			self.currently_displayed.pop(s)
+			self.selector_display[s][0].pack_forget()
+			self.selector_display[s][0].destroy()
+			self.selector_display.pop(s)	
+			self.plot1.get_lines()[self.graph_indexes[s]].remove()
+			i = self.graph_indexes[s]
+			del self.graph_indexes[s]
+			for e in self.graph_indexes:
+				if self.graph_indexes[e] > i:
+					self.graph_indexes[e] -= 1
+
 		self.canvas.draw()
-		self.canvas.get_tk_widget().pack()
-		toolbar = NavigationToolbar2Tk(self.canvas, self.graph_frame)
-		if self.legend_visibility:
-			plot1.legend(self.currently_displayed.keys())
-		self.canvas.get_tk_widget().pack()
-
-		self.graph_frame.grid(row=0, column = 0, sticky = "nsew")
 	
+	def plot(self,x,y):
+		self.plot1.plot(x,y,'o')
+		#for pos in self.cursor_positions:
+		#	plot1.axvline(x=pos,ls="--")			
+
+		self.canvas.draw()
+
+
 if __name__ == "__main__":
 	app = App()
 	app.mainloop()
