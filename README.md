@@ -85,4 +85,26 @@ Takes the natural logarithm of every y value in the dataset.
 
 ## Example: Finding electron temperature
 
+First, the desired file is chosen and uploaded to the program:
+
 ![alt text](https://github.com/Theallpro1/langmuir-experiment-analysis-program/blob/main/ExampleImages/first_step.png)
+
+The two cursors are now turned on, and moved to the beginning and the end of the ion saturation region:
+
+![alt text](https://github.com/Theallpro1/langmuir-experiment-analysis-program/blob/main/ExampleImages/second_step.png)
+
+The sample is now selected in the file selector, and the "basic isat" button is pressed, making the extrapolated ion current and the calculated electron current appear:
+
+![alt text](https://github.com/Theallpro1/langmuir-experiment-analysis-program/blob/main/ExampleImages/third_step.png)
+
+The cursors are now turned off and the original file along with the extrapolated current is deleted to reduce cluttering:
+
+![alt text](https://github.com/Theallpro1/langmuir-experiment-analysis-program/blob/main/ExampleImages/fourth_step.png)
+
+The electron current is selected, and then the "ln" button is pressed, making the red graph on the image below appear. The original graph is compressed due to scaling, and is the green "line" at the top of the graph. Then the cursors are turned on again, and moved to the electron temperature fit region:
+
+![alt text](https://github.com/Theallpro1/langmuir-experiment-analysis-program/blob/main/ExampleImages/fifth_step.png)
+
+The "temp" button is now pressed, displaying the calculated temperature along with error bounds:
+
+![alt text](https://github.com/Theallpro1/langmuir-experiment-analysis-program/blob/main/ExampleImages/sixth_step.png)
