@@ -8,6 +8,8 @@ import numpy as np
 import sys
 from matplotlib import pyplot as plt
 import data_manipulator 
+import platform
+import math
 
 ctk.set_appearance_mode("Dark")  # Modes: system (default), light, dark
 ctk.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
@@ -20,22 +22,17 @@ try:
 except:
 	starting_dir = "~"
 
-# Add in cursor system
+# fit using np.where not working if the datapoints dont align with integer voltages
 # When adding a product of an original graph it is possible to add multiples. Fix this.
 # Point by point not working
-# Add multiple graphs at the same tine in explorer
-# Before first data need to move graph fix this to make it less annoying
-# Try to update graph without redrawing the whole thing, messing up scales
 # Derivatives or other manipulations don't show up
 # Maybe try making it write to a csv file.
 # vspace
 # xi: = probe radius/ debye length
 # formula for debye using epsilong * KT/ne^2
-# save graph and data
 # fix gui
 # deal with multiple files
 # error bounds
-# set lower bound on isat not only upper
 # Delete anything draastically out of average
 
 class App(ctk.CTk):
@@ -47,8 +44,9 @@ class App(ctk.CTk):
 		self.HEIGHT = 5000
 		self.title("Langmuir Experiment Analyzer Program")
 		self.geometry("%ix%i" % (self.WIDTH, self.HEIGHT))
-		self.img = tk.Image("photo", file="icon.png")
-		self.tk.call('wm', 'iconphoto', self._w, self.img)
+		if platform.system() == "Darwin":
+			self.img = tk.Image("photo", file="icon.png")
+			self.tk.call('wm', 'iconphoto', self._w, self.img)
 		self.data_analyzer = data_manipulator.data_manipulator()
 
 		# This list holds the filenames of the graphs that are displayed, along with their data
@@ -58,9 +56,10 @@ class App(ctk.CTk):
 		self.next_index = 0
 		self.select_all = tk.IntVar()
 		self.legend_visibility = False
+		self.cursor_visibility = [tk.IntVar(value=0), tk.IntVar(value=0)]
 		self.fit_bound = [tk.IntVar(value=0), tk.IntVar(value=0)]
 		self.cursor_positions = []	
-		self.graph_indexes = {}
+		self.graph_indexes = {"cursor1" : 0, "cursor2" : 1}
 
 		# Frames 
 		self.left_frame = ctk.CTkFrame()
@@ -86,31 +85,46 @@ class App(ctk.CTk):
 		self.canvas = FigureCanvasTkAgg(self.fig, master = self.graph_frame)
 		self.toolbar = NavigationToolbar2Tk(self.canvas, self.graph_frame)
 		self.canvas.get_tk_widget().pack()
+		self.cursor1 = self.plot1.axvline(x=self.fit_bound[0].get(),linestyle = "None")
+		self.cursor2 = self.plot1.axvline(x=self.fit_bound[1].get(),linestyle = "None")
+		self.canvas.draw()
 
 		self.plus_button = ctk.CTkButton(master = self.cursor_frame,
-			command = lambda: self.incr(1),
+			command = lambda: self.incr(1,1),
 			text = ">",
 			width = 5)
 		self.plus_button_l = ctk.CTkButton(master = self.cursor_frame,
-			command = lambda: self.incr(10),
+			command = lambda: self.incr(10,1),
 			text = ">>",
 			width = 5)
-		self.plus_button_el = ctk.CTkButton(master = self.cursor_frame,
-			command = lambda: self.incr(100),
-			text = ">>>",
-			width = 5)
 		self.minus_button = ctk.CTkButton(master = self.cursor_frame,
-			command = lambda: self.minu(1),
+			command = lambda: self.minu(1,1),
 			text = "<",
 			width = 5)
 		self.minus_button_l = ctk.CTkButton(master = self.cursor_frame,
-			command = lambda: self.minu(10),
+			command = lambda: self.minu(10,1),
 			text = "<<",
 			width = 5)
-		self.minus_button_el = ctk.CTkButton(master = self.cursor_frame,
-			command = lambda: self.minu(100),
-			text = "<<<",
+		self.plus_button_2 = ctk.CTkButton(master = self.cursor_frame,
+			command = lambda: self.incr(1,2),
+			text = ">",
 			width = 5)
+		self.plus_button_l_2 = ctk.CTkButton(master = self.cursor_frame,
+			command = lambda: self.incr(10,2),
+			text = ">>",
+			width = 5)
+		self.minus_button_2 = ctk.CTkButton(master = self.cursor_frame,
+			command = lambda: self.minu(1,2),
+			text = "<",
+			width = 5)
+		self.minus_button_l_2 = ctk.CTkButton(master = self.cursor_frame,
+			command = lambda: self.minu(10,2),
+			text = "<<",
+			width = 5)
+
+		self.rescale_button = ctk.CTkButton(master = self.options_frame,
+			command = self.rescale,
+			text = "Rescale")
 		self.deletion_button = ctk.CTkButton(master = self.options_frame,
 			command = self.delete_file,
 	                text = "Delete")
@@ -155,8 +169,27 @@ class App(ctk.CTk):
 		self.absolute_button = ctk.CTkButton(master = self.math_frame,
 			command = self.absolute_v,
 			text = "|f|")
+		self.temperature_button = ctk.CTkButton(master = self.math_frame,
+			command = self.temp_fit,
+			text = "temp")
+		self.natural_log_button = ctk.CTkButton(master = self.math_frame,
+			command = self.natural,
+			text = "ln")
+		self.save_button = ctk.CTkButton(master = self.math_frame,
+			command = self.save_data,
+			text = "save")
 		
 		self.fit_counter = ctk.CTkLabel(master = self.cursor_frame, textvar = self.fit_bound[0])
+		self.fit_counter_2 = ctk.CTkLabel(master = self.cursor_frame, textvar = self.fit_bound[1])
+		self.cursor_show_button = ctk.CTkCheckBox(master = self.cursor_frame,
+			command = lambda: self.hide_cursor(1),
+			variable = self.cursor_visibility[0],
+			text = "")
+		self.cursor_show_button_2 = ctk.CTkCheckBox(master = self.cursor_frame,
+			command = lambda: self.hide_cursor(2),
+			variable = self.cursor_visibility[1],
+			text = "")
+
 		self.select_all_label = ctk.CTkLabel(master = self.select_all_frame, text = "Select All:")
 
 		# Put the widgets on the screen
@@ -199,6 +232,8 @@ class App(ctk.CTk):
 		self.deletion_button.pack()
 		self.scale_button.pack()	
 		self.legend_button.pack()
+		self.save_button.pack()
+		self.rescale_button.pack()
 
 		self.derivative_button.pack()
 		self.box_button.pack()
@@ -209,20 +244,56 @@ class App(ctk.CTk):
 		self.eedf_button.pack()
 		self.plasma_potential_button.pack()
 		self.absolute_button.pack()		
+		self.temperature_button.pack()
+		self.natural_log_button.pack()
 
 		self.cursor_frame.pack()
-		self.minus_button_el.grid(row=0,column=0)
-		self.minus_button_l.grid(row=0,column=1)
-		self.minus_button.grid(row=0,column=2)
-		self.plus_button.grid(row=0,column=4)
-		self.plus_button_l.grid(row=0,column=5)
-		self.plus_button_el.grid(row=0,column=6)
-		self.fit_counter.grid(row=0,column=3)
+		self.minus_button_l.grid(row=0,column=0)
+		self.minus_button.grid(row=0,column=1)
+		self.plus_button.grid(row=0,column=3)
+		self.plus_button_l.grid(row=0,column=4)
+		self.fit_counter.grid(row=0,column=2)
+		self.cursor_show_button.grid(row=0,column=5)
+		self.minus_button_l_2.grid(row=1,column=0)
+		self.minus_button_2.grid(row=1,column=1)
+		self.plus_button_2.grid(row=1,column=3)
+		self.plus_button_l_2.grid(row=1,column=4)
+		self.fit_counter_2.grid(row=1,column=2)
+		self.cursor_show_button_2.grid(row=1,column=5)
 	
+	def hide_cursor(self, n):
+		if n == 1:
+			if self.cursor1.get_linestyle() == "None":
+				self.cursor1.set_linestyle("solid")				
+			else:
+				self.cursor1.set_linestyle("None")				
+		elif n == 2: 
+			if self.cursor2.get_linestyle() == "None":
+				self.cursor2.set_linestyle("solid")				
+			else:
+				self.cursor2.set_linestyle("None")				
+
+		self.canvas.draw()
+
 	def absolute_v(self):
 		fname = self.get_selected()[0]
 		a = self.data_analyzer.absolute_val(self.currently_displayed[fname])[1]
 		self.add_graph(fname + "_sav", self.currently_displayed[fname][0], a)
+
+	def save_data(self):
+		fname = self.get_selected()[0]
+		data = self.currently_displayed[fname]
+		data_to_write = ""
+		for i in range(len(data[0])):
+			data_to_write += str(data[0][i])
+			data_to_write += ","
+			data_to_write += str(data[1][i])
+			data_to_write += ","
+
+		data_to_write = data_to_write[:-1]
+		f = open(fname + "_new_write", "w")
+		f.write(data_to_write)
+		f.close()
 
 	def plasma_potential(self):
 		fname = self.get_selected()[0]
@@ -233,7 +304,8 @@ class App(ctk.CTk):
 	def eedf(self):
 		fname = self.get_selected()[0]
 		print(self.currently_displayed[fname])
-		ee = self.data_analyzer.druyvesteyn(self.currently_displayed[fname],8)	
+		vp = float(input("V_p?: "))
+		ee = self.data_analyzer.druyvesteyn(self.currently_displayed[fname],vp)	
 		self.add_graph(fname + "_ee", self.currently_displayed[fname][0], ee)
 
 	def savgol(self):
@@ -244,7 +316,8 @@ class App(ctk.CTk):
 	# Get rid of the try except
 	def basic_isat(self):
 		fname = self.get_selected()[0]
-		isat,electron_current = self.data_analyzer.ion_saturation_basic(self.currently_displayed[fname],self.fit_bound[0].get())	
+		data_t = self.currently_displayed[fname]
+		isat,electron_current = self.data_analyzer.ion_saturation_basic(data_t,np.where(data_t[0] == self.fit_bound[0].get())[0][0],np.where(data_t[0] == self.fit_bound[1].get())[0][0])	
 		self.add_graph(fname + "_isat", self.currently_displayed[fname][0], isat)
 		self.add_graph(fname + "_ecurr", self.currently_displayed[fname][0], electron_current)
 
@@ -288,6 +361,34 @@ class App(ctk.CTk):
 			self.plot1.set_yscale("linear")
 		self.canvas.draw()
 
+	def rescale(self):
+		xs = []
+		ys = []
+		for v1 in self.currently_displayed:
+			xs.extend(list(self.currently_displayed[v1][0]))
+			ys.extend(list(self.currently_displayed[v1][1]))
+
+		minxs = float(min(xs))
+		minys = float(min(ys))
+		maxxs = float(max(xs))
+		maxys = float(max(ys))
+	
+		maxys = round(maxys, -int(math.floor(math.log10(abs(maxys)))))	
+		print(maxys)
+		smaxys = str(maxys)
+		if smaxys[-1] == "9":
+			maxys = float(smaxys[:-2] + "1")
+		else:
+			maxys = float(smaxys[:-1] + str(int(smaxys[-1]) + 1))
+		print(maxys)
+
+		self.plot1.ignore_existing_data_limits = True
+		self.plot1.update_datalim(([minxs,minys],[maxxs,maxys]))
+		self.plot1.autoscale_view()
+		self.canvas.draw()
+		plt.draw()
+		self.canvas.draw()
+
 	def get_selected(self):
 		selected = []
 		for key in self.selector_display:
@@ -315,11 +416,42 @@ class App(ctk.CTk):
 		data = self.data_analyzer.average(data_to_average)
 		self.add_graph("average", data[0], data[1])
 
-	def incr(self,n):
-		self.fit_bound[0].set(self.fit_bound[0].get()+n)		
+	def incr(self,n,cnum):
+		self.fit_bound[cnum-1].set(self.fit_bound[cnum-1].get()+n)		
+		if cnum == 1:
+			self.cursor1.set_xdata(self.fit_bound[cnum-1].get())
+		if cnum == 2:
+			self.cursor2.set_xdata(self.fit_bound[cnum-1].get())
+		self.canvas.draw()
 
-	def minu(self,n):
-		self.fit_bound[0].set(self.fit_bound[0].get()-n)
+	def minu(self,n,cnum):
+		self.fit_bound[cnum-1].set(self.fit_bound[cnum-1].get()-n)
+		if cnum == 1:
+			self.cursor1.set_xdata(self.fit_bound[cnum-1].get())
+		if cnum == 2:
+			self.cursor2.set_xdata(self.fit_bound[cnum-1].get())
+		self.canvas.draw()
+
+	def temp_fit(self):
+		fname = self.get_selected()[0]
+		data_t = self.currently_displayed[fname]
+		temp_fit_lower = np.where(data_t[0] == self.fit_bound[0].get())[0][0]
+		temp_fit_upper = np.where(data_t[0] == self.fit_bound[1].get())[0][0]	
+		temps = []
+		for upper_bound in range(temp_fit_lower, temp_fit_upper+1):
+			for lower_bound in range(temp_fit_lower, upper_bound):
+				if abs(lower_bound-upper_bound) == 1:
+					pass
+				else:
+					m,b = np.polyfit(data_t[0][lower_bound:upper_bound], data_t[1][lower_bound:upper_bound], 1)
+					temps.append(1/m)
+	
+		temps = np.array(temps)
+		av = np.average(temps)
+		std = np.std(temps)
+		
+		print("Temp: ", av)
+		print("Bounds: %f to %f" % (av - std, av + std) )
 
 	def derivative(self):
 		for fname in self.get_selected():
@@ -330,6 +462,17 @@ class App(ctk.CTk):
 					self.add_graph(prelim_fname, data[0], data[1])
 			except KeyError:
 				print("\a")
+
+	def natural(self):
+		for fname in self.get_selected():
+			try:		
+				data = [self.currently_displayed[fname][0],np.log(self.currently_displayed[fname][1])]
+				prelim_fname = fname.split("/")[-1].split(".")[0] + "_ln." + fname.split("/")[-1].split(".")[1]
+				if prelim_fname not in list(self.graph_indexes.keys()):
+					self.add_graph(prelim_fname, data[0], data[1])
+			except KeyError:
+				print("\a")
+
 
 
 	def get_data(self, fname):
@@ -342,7 +485,14 @@ class App(ctk.CTk):
 		vi_data = vi_data.split(",")
 		x = np.array([float(vi_data[i]) for i in range(len(vi_data)) if i % 2 == 0])
 		y = np.array([float(vi_data[i]) for i in range(len(vi_data)) if i % 2 == 1])
-		
+
+		################# EXPERIMENTAL #################
+
+		avv = np.average(y)
+		for i in range(1,len(y)-1):
+			if abs(y[i]-avv) >= 0.1:
+				y[i] = (y[i+1] + y[i-1])/2		
+
 		return x,y	
 
 	def add_graph(self, f, x, y):
@@ -389,9 +539,6 @@ class App(ctk.CTk):
 	
 	def plot(self,x,y):
 		self.plot1.plot(x,y,'o')
-		#for pos in self.cursor_positions:
-		#	plot1.axvline(x=pos,ls="--")			
-
 		self.canvas.draw()
 
 
