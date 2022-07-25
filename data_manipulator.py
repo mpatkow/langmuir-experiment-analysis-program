@@ -61,15 +61,15 @@ class data_manipulator:
 	def ion_saturation_primitive(self, data):
 		return data[1][0]
 	
-	def ion_saturation_basic(self, data, isat_guess):
-		m,b = np.polyfit(data[0][:isat_guess], data[1][:isat_guess], 1)
+	def ion_saturation_basic(self, data, isat_guess_lower, isat_guess_upper):
+		m,b = np.polyfit(data[0][isat_guess_lower:isat_guess_upper], data[1][isat_guess_lower:isat_guess_upper], 1)
 		return m*data[0] + b, data[1] - m*data[0] -b
 	
 	def savgol_smoothing(self, data):
 		return savgol_filter(data[1],51,3)
 	
 	def druyvesteyn(self, data, vp):
-		d = self.derivative(data, 2)[1]
+		d = data[1]
 		return d * (vp-data[0])**0.5
 
 	def plasma_potential(self, data):
