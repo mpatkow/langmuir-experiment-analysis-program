@@ -97,7 +97,7 @@ The sample is now selected in the file selector, and the "basic isat" button is 
 
 ![alt text](https://github.com/Theallpro1/langmuir-experiment-analysis-program/blob/main/ExampleImages/third_step.png)
 
-The cursors are now turned off and the original file along with the extrapolated current is deleted to reduce cluttering:
+The cursors are now turned off and the original file along with the extrapolated current are deleted to reduce cluttering:
 
 ![alt text](https://github.com/Theallpro1/langmuir-experiment-analysis-program/blob/main/ExampleImages/fourth_step.png)
 
