@@ -85,4 +85,4 @@ Takes the natural logarithm of every y value in the dataset.
 
 ## Example: Finding electron temperature
 
-![alt text](https://github.com/Theallpro1/langmuir-experiment-analysis-program/tree/main/ExampleImages/first_step.png?raw=true)
+![alt text](https://github.com/Theallpro1/langmuir-experiment-analysis-program/blob/main/ExampleImages/first_step.png)
