@@ -162,7 +162,8 @@ class App(ctk.CTk):
 			text = "savgol filter")
 		self.eedf_button = ctk.CTkButton(master = self.math_frame,
 			command = self.eedf,
-			text = "EEDF")
+			text = "EEDF",
+			fg_color="red")
 		self.plasma_potential_button = ctk.CTkButton(master= self.math_frame,
 			command = self.plasma_potential,
 			text = "plasma potential")
@@ -372,21 +373,10 @@ class App(ctk.CTk):
 		minys = float(min(ys))
 		maxxs = float(max(xs))
 		maxys = float(max(ys))
+		print(minxs, maxxs, minys, maxys)
 	
-		maxys = round(maxys, -int(math.floor(math.log10(abs(maxys)))))	
-		print(maxys)
-		smaxys = str(maxys)
-		if smaxys[-1] == "9":
-			maxys = float(smaxys[:-2] + "1")
-		else:
-			maxys = float(smaxys[:-1] + str(int(smaxys[-1]) + 1))
-		print(maxys)
-
-		self.plot1.ignore_existing_data_limits = True
-		self.plot1.update_datalim(([minxs,minys],[maxxs,maxys]))
-		self.plot1.autoscale_view()
-		self.canvas.draw()
-		plt.draw()
+		self.plot1.set_xlim(minxs,maxxs)
+		self.plot1.set_ylim(minys,maxys)
 		self.canvas.draw()
 
 	def get_selected(self):
