@@ -31,7 +31,7 @@ The next button in the graph settings section is the lin/log button, which toggl
 
 The legend button toggles the graph legend on and off.
 
-The Rescale button is still a work in progress.
+The Rescale button rescales the graph to fit the data.
 
 
 ### Cursors
