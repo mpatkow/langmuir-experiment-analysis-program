@@ -571,7 +571,7 @@ class App(ctk.CTk):
 			try:
 				data = [self.currently_displayed[fname][0],np.log(self.currently_displayed[fname][1])]
 				#prelim_fname = fname.split("/")[-1].split(".")[0] + "_ln." + fname.split("/")[-1].split(".")[1]
-				prelim_fname = "average_ln"
+				prelim_fname = fname  + "average_ln"
 				if prelim_fname not in list(self.graph_indexes.keys()):
 					self.add_graph(prelim_fname, data[0], data[1])
 			except KeyError:
