@@ -478,6 +478,14 @@ class App(ctk.CTk):
 			xs.extend(list(self.currently_displayed[v1][0]))
 			ys.extend(list(self.currently_displayed[v1][1]))
 
+		for xs_i in range(len(xs)):
+			if xs[xs_i] == np.NAN:
+				del xs[xs_i]
+
+		for ys_i in range(len(ys)):
+			if ys[ys_i] == np.NAN:
+				del ys[ys_i]
+
 		minxs = float(min(xs))
 		minys = float(min(ys))
 		maxxs = float(max(xs))
