@@ -401,11 +401,14 @@ class App(ctk.CTk):
 		ee = self.data_analyzer.druyvesteyn(self.currently_displayed[fname],vp)
 		self.add_graph(fname + "_ee", self.currently_displayed[fname][0], ee)
 
+	# Savgol filter on selected files
 	def savgol(self):
-		fname = self.get_selected()[0]
-		smoothed = self.data_analyzer.savgol_smoothing(self.currently_displayed[fname])
-		self.add_graph(fname + "_sav", self.currently_displayed[fname][0], smoothed)
-
+		for fname in self.get_selected():
+			try:
+				smoothed = self.data_analyzer.savgol_smoothing(self.currently_displayed[fname])
+				self.add_graph(fname + "_sav", self.currently_displayed[fname][0], smoothed)
+			except:
+				print(e)
 
 	# Get rid of the try except
 	def basic_isat(self):
@@ -567,7 +570,8 @@ class App(ctk.CTk):
 		for fname in self.get_selected():
 			try:
 				data = [self.currently_displayed[fname][0],np.log(self.currently_displayed[fname][1])]
-				prelim_fname = fname.split("/")[-1].split(".")[0] + "_ln." + fname.split("/")[-1].split(".")[1]
+				#prelim_fname = fname.split("/")[-1].split(".")[0] + "_ln." + fname.split("/")[-1].split(".")[1]
+				prelim_fname = "average_ln"
 				if prelim_fname not in list(self.graph_indexes.keys()):
 					self.add_graph(prelim_fname, data[0], data[1])
 			except KeyError:
