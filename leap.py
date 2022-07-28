@@ -24,7 +24,6 @@ except:
 	starting_dir = "~"
 
 
-# fit using np.where not working if the datapoints dont align with integer voltages
 # When adding a product of an original graph it is possible to add multiples. Fix this.
 # vspace
 # xi: = probe radius/ debye length
@@ -70,6 +69,8 @@ class App(ctk.CTk):
 		self.graph_indexes = {"cursor1" : 0, "cursor2" : 1}
 		self.temperature = tk.StringVar(value = "---")
 		self.floating_potential = tk.DoubleVar()
+		self.debye_length = tk.DoubleVar()
+		self.density = tk.DoubleVar()
 
 		# Frames
 		self.left_frame = ctk.CTkFrame()
@@ -117,6 +118,21 @@ class App(ctk.CTk):
 			corner_radius = 10)
 		self.probe_area_label = ctk.CTkLabel(master = self.probe_area_frame,
 			text = "Ap (cm^2):")
+		self.ion_mass_frame = ctk.CTkFrame(master = self.results_frame)
+		self.ion_mass_input = ctk.CTkEntry(master = self.ion_mass_frame,
+			width = 120,
+			height = 25,
+			corner_radius = 10)
+		self.ion_mass_label = ctk.CTkLabel(master = self.ion_mass_frame,
+			text = "M (kg):")
+		self.debye_frame = ctk.CTkFrame(master = self.results_frame)
+		self.debye_button = ctk.CTkButton(master = self.debye_frame,
+			command = self.debye,
+			text = "lD:",
+			height = 30,
+			width = 30)
+		self.debye_label = ctk.CTkLabel(master = self.debye_frame,
+			textvar = self.debye_length)
 
 		# The figure that will contain the plot and adding the plot
 		self.fig = Figure(figsize = (int(self.options[0]),int(self.options[0])), dpi = 100)
@@ -296,6 +312,12 @@ class App(ctk.CTk):
 		self.probe_area_frame.pack()
 		self.probe_area_label.grid(row = 0, column = 0)
 		self.probe_area_input.grid(row = 0, column = 1)
+		self.ion_mass_frame.pack()
+		self.ion_mass_label.grid(row = 0, column = 0)
+		self.ion_mass_input.grid(row = 0, column = 1)
+		self.debye_frame.pack()
+		self.debye_button.grid(row = 0, column = 0)
+		self.debye_label.grid(row = 0, column = 1)
 
 		self.scale_button.pack()
 		self.legend_button.pack()
@@ -389,12 +411,24 @@ class App(ctk.CTk):
 	def basic_isat(self):
 		fname = self.get_selected()[0]
 		data_t = self.currently_displayed[fname]
-		isat,electron_current = self.data_analyzer.ion_saturation_basic(data_t,np.where(data_t[0] == self.fit_bound[0].get())[0][0],np.where(data_t[0] == self.fit_bound[1].get())[0][0])
+		lower_abs = np.absolute(data_t[0] - self.fit_bound[0].get())
+		upper_abs = np.absolute(data_t[0] - self.fit_bound[1].get())
+		isat,electron_current = self.data_analyzer.ion_saturation_basic(data_t,np.where(lower_abs == np.min(lower_abs))[0][0],np.where(upper_abs == np.min(upper_abs))[0][0])
 		self.add_graph(fname + "_isat", self.currently_displayed[fname][0], isat)
 		self.add_graph(fname + "_ecurr", self.currently_displayed[fname][0], electron_current)
 
 	def oml(self):
-		print("oml")
+		fname = self.get_selected()[0]
+		data_t = self.currently_displayed[fname]
+		lower_abs = np.absolute(data_t[0] - self.fit_bound[0].get())
+		upper_abs = np.absolute(data_t[0] - self.fit_bound[1].get())
+		#density = self.data_analyzer.oml_theory(data_t,np.where(lower_abs == np.min(lower_abs))[0][0],np.where(upper_abs == np.min(upper_abs))[0][0],self.probe_area_input.get(),self.ion_mass_input.get())
+		ddd = self.data_analyzer.oml_theory(data_t,np.where(lower_abs == np.min(lower_abs))[0][0],np.where(upper_abs == np.min(upper_abs))[0][0],0.047,6.62 * 10**(-26))
+		self.density.set(ddd)
+
+	def debye(self):
+		l_squared = 8.8641878128*10**(-12)*float(self.temperature.get())/(1.60217663*10**(-19) * self.density.get() * 10**6)
+		self.debye_length.set(l_squared ** 0.5)
 
 	def file_browser(self):
 		#try:
@@ -403,7 +437,6 @@ class App(ctk.CTk):
 				if fname not in self.selector_display.keys():
 					[x,y] = self.get_data(fname)
 					self.add_graph(fname, x, y)
-					print("!")
 		#except:
 		#	pass
 
@@ -498,8 +531,10 @@ class App(ctk.CTk):
 	def temp_fit(self):
 		fname = self.get_selected()[0]
 		data_t = self.currently_displayed[fname]
-		temp_fit_lower = np.where(data_t[0] == self.fit_bound[0].get())[0][0]
-		temp_fit_upper = np.where(data_t[0] == self.fit_bound[1].get())[0][0]
+		lower_abs = np.absolute(data_t[0] - self.fit_bound[0].get())
+		upper_abs = np.absolute(data_t[0] - self.fit_bound[1].get())
+		temp_fit_lower = np.where(lower_abs == np.min(lower_abs))[0][0]
+		temp_fit_upper = np.where(upper_abs == np.min(upper_abs))[0][0]
 		temps = []
 		for upper_bound in range(temp_fit_lower, temp_fit_upper+1):
 			for lower_bound in range(temp_fit_lower, upper_bound):

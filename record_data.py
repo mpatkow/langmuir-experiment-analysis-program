@@ -35,7 +35,7 @@ del intr.timeout
 
 # Make a new file with name sample<#+1>
 i = 0
-fname = "sample0.txt"
+fname = "sample0R.txt"
 while os.path.exists("sample%s.txt" % i):
         i += 1
         fname = "sample%sR.txt" % i
@@ -43,8 +43,6 @@ f = open(fname, "a")
 
 
 for loop_num in tqdm.tqdm(range(divisions)):
-
-
         starting_voltage = starting_voltages[loop_num]
         ending_voltage = ending_voltages[loop_num]
         incrs = (ending_voltage-starting_voltage)/n_sec
@@ -87,7 +85,7 @@ for loop_num in tqdm.tqdm(range(divisions)):
 
         # TRY REDUCING THIS TODO
 
-        time.sleep(6)
+        #time.sleep(6)
 
         intr.write(":TRAC:DATA?")
 
@@ -127,4 +125,28 @@ new_data = new_data[:-1] # Remove extra comma at the end
 
 f = open("sample%s.txt" % i, "w")
 f.write(new_data)
+f.close()
+os.remove("sample%sR.txt" % i)
+
+f = open("sample%s.txt" % i, "r")
+r = f.readline()
+f.close()
+os.remove("sample%s.txt" % i)
+
+new_data = r.split(",")
+vs = [new_data[2*i] for i in range(int(len(new_data)/2))]
+
+for i in range(len(new_data)-1, -1, -1):
+	if new_data.count(new_data[i]) > 1 and i % 2 == 0:
+		del new_data[i+1]
+		del new_data[i]
+
+nd = ""
+for l in new_data:
+	nd += l
+	nd += ","
+nd = nd[:-1]
+
+f = open("sample%s.txt" % i, "w")
+f.write(nd)
 f.close()
