@@ -1,0 +1,3 @@
+windowsize:	11
+xyseparator:	\t
+datatype:	False
