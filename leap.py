@@ -476,7 +476,7 @@ class App(ctk.CTk):
 	def rescale(self):
 		xs = []
 		ys = []
-		for v1 in self.currently_displayed:
+		for v1 in self.get_selected():
 			xs.extend(list(self.currently_displayed[v1][0]))
 			ys.extend(list(self.currently_displayed[v1][1]))
 
