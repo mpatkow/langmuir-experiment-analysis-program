@@ -287,9 +287,11 @@ class App(ctk.CTk):
 		self.right_frame.grid_columnconfigure(0, weight=1)
 		self.right_frame.grid_columnconfigure(1, weight=1)
 		self.right_frame.grid_rowconfigure(0, weight=1)
-		self.middle_frame.grid(row=0, column=0, sticky = "nsew")
-		self.selector_frame.grid(row=0, column=0, sticky = "nsew")
-		self.results_frame.grid(row=1, column=0, sticky = "nsew")
+		self.middle_frame.grid(row=0, column=0, sticky = "nswe")
+		self.middle_frame.grid_rowconfigure(0, weight = 1)
+		self.middle_frame.grid_rowconfigure(1, weight = 1)
+		self.selector_frame.grid(row=0, column=0, sticky = "nswe")
+		self.results_frame.grid(row=1, column=0, sticky = "nswe")
 		self.control_frame.grid(row=0, column=1, sticky = "nswe")
 
 		self.control_frame.grid_columnconfigure(0, weight=1)
@@ -303,18 +305,18 @@ class App(ctk.CTk):
 		self.select_all_label.grid(row=0, column=0)
 		self.select_all_button.grid(row=0, column=1)
 
-		self.temperature_frame.pack()
-		self.temperature_button.grid(row = 0, column = 0)
-		self.temperature_label.grid(row = 0, column = 1)
-		self.floating_frame.pack()
-		self.floating_potential_button.grid(row = 0, column = 0)
-		self.floating_label.grid(row = 0, column = 1)
 		self.probe_area_frame.pack()
 		self.probe_area_label.grid(row = 0, column = 0)
 		self.probe_area_input.grid(row = 0, column = 1)
 		self.ion_mass_frame.pack()
 		self.ion_mass_label.grid(row = 0, column = 0)
 		self.ion_mass_input.grid(row = 0, column = 1)
+		self.temperature_frame.pack()
+		self.temperature_button.grid(row = 0, column = 0)
+		self.temperature_label.grid(row = 0, column = 1)
+		self.floating_frame.pack()
+		self.floating_potential_button.grid(row = 0, column = 0)
+		self.floating_label.grid(row = 0, column = 1)
 		self.debye_frame.pack()
 		self.debye_button.grid(row = 0, column = 0)
 		self.debye_label.grid(row = 0, column = 1)
@@ -480,7 +482,6 @@ class App(ctk.CTk):
 
 		xs = [xss for xss in xs if str(xss) != 'nan']
 		ys = [yss for yss in ys if str(yss) != 'nan']
-
 
 		minxs = float(min(xs))
 		minys = float(min(ys))
