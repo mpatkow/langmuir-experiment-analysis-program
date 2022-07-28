@@ -2,6 +2,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import customtkinter as ctk
 import os
+import matplotlib
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,NavigationToolbar2Tk)
 import numpy as np
@@ -22,18 +23,13 @@ try:
 except:
 	starting_dir = "~"
 
+
 # fit using np.where not working if the datapoints dont align with integer voltages
 # When adding a product of an original graph it is possible to add multiples. Fix this.
-# Point by point not working
-# Derivatives or other manipulations don't show up
-# Maybe try making it write to a csv file.
 # vspace
 # xi: = probe radius/ debye length
 # formula for debye using epsilong * KT/ne^2
-# fix gui
-# deal with multiple files
-# error bounds
-# Delete anything draastically out of average
+# when doing manipulations improve the name of the new file
 
 class App(ctk.CTk):
 	def __init__(self):
@@ -49,10 +45,22 @@ class App(ctk.CTk):
 			self.tk.call('wm', 'iconphoto', self._w, self.img)
 		self.data_analyzer = data_manipulator.data_manipulator()
 
+		option_file = open("options.txt", "r")
+		self.options = [l.split("\t")[1][:-1] for l in option_file.readlines()]
+		option_file.close()
+
 		# This list holds the filenames of the graphs that are displayed, along with their data
 		self.currently_displayed = {}
 		self.selector_display = {}
 		self.lin_log = 0
+		if self.options[2] == "False":
+			self.data_type_old = False
+		else:
+			self.data_type_old = True
+		if self.options[1] == "\\t":
+			self.xy_split = "\t"
+		else:
+			self.xy_split = self.options[1]
 		self.next_index = 0
 		self.select_all = tk.IntVar()
 		self.legend_visibility = False
@@ -60,6 +68,8 @@ class App(ctk.CTk):
 		self.fit_bound = [tk.IntVar(value=0), tk.IntVar(value=0)]
 		self.cursor_positions = []	
 		self.graph_indexes = {"cursor1" : 0, "cursor2" : 1}
+		self.temperature = tk.StringVar(value = "---")
+		self.floating_potential = tk.DoubleVar()
 
 		# Frames 
 		self.left_frame = ctk.CTkFrame()
@@ -69,25 +79,69 @@ class App(ctk.CTk):
 		self.adding_frame = ctk.CTkFrame(master = self.left_frame)	# Holds the controls for adding and removing files from the graph.
 
 
-		self.control_frame = ctk.CTkFrame(master = self.right_frame)	# Holds the controls for manipulating the graphs.
-		self.selector_frame = ctk.CTkFrame(master = self.right_frame)	
+		self.control_frame = ctk.CTkFrame(master = self.right_frame)# Holds the controls for manipulating the graphs.
+		self.middle_frame = ctk.CTkFrame(master = self.right_frame)
+		self.selector_frame = ctk.CTkFrame(master = self.middle_frame)	
 		self.select_all_frame = ctk.CTkFrame(master = self.selector_frame)
 	
 		self.options_frame = ctk.CTkFrame(master = self.control_frame)
 		self.math_frame = ctk.CTkFrame(master = self.control_frame)
+		self.useless_frame  = ctk.CTkFrame(master = self.control_frame)
+
+		self.cursor_frame = ctk.CTkFrame(master = self.options_frame)
 
 
-		self.cursor_frame = ctk.CTkFrame(master = self.options_frame)	
+
+		""" RESULTS FRAMES """
+		self.results_frame = ctk.CTkFrame(master = self.middle_frame)
+		self.temperature_frame = ctk.CTkFrame(master = self.results_frame)		
+		self.temperature_button = ctk.CTkButton(master = self.temperature_frame,
+			command = self.temp_fit,
+			text = "kTe",
+			height = 30,
+			width = 30)
+		self.temperature_label = ctk.CTkLabel(master = self.temperature_frame,
+			textvar = self.temperature)
+		self.floating_frame = ctk.CTkFrame(master = self.results_frame)		
+		self.floating_potential_button = ctk.CTkButton(master = self.floating_frame,
+			command = self.floating,
+			text = "Vf",
+			height = 30,
+			width = 30)
+		self.floating_label = ctk.CTkLabel(master = self.floating_frame,
+			textvar = self.floating_potential)
 
 		# The figure that will contain the plot and adding the plot
-		self.fig = Figure(figsize = (7,7), dpi = 100)
+		self.fig = Figure(figsize = (int(self.options[0]),int(self.options[0])), dpi = 100)
 		self.plot1 = self.fig.add_subplot(111)
 		self.canvas = FigureCanvasTkAgg(self.fig, master = self.graph_frame)
-		self.toolbar = NavigationToolbar2Tk(self.canvas, self.graph_frame)
 		self.canvas.get_tk_widget().pack()
+
+		self.toolbar = NavigationToolbar2Tk(self.canvas, self.useless_frame)
+		self.toolbar.update()
 		self.cursor1 = self.plot1.axvline(x=self.fit_bound[0].get(),linestyle = "None")
 		self.cursor2 = self.plot1.axvline(x=self.fit_bound[1].get(),linestyle = "None")
 		self.canvas.draw()
+
+		""" ADDING FRAME """
+
+		self.explorer_button = ctk.CTkButton(master = self.adding_frame,
+			command = self.file_browser,
+			text = "explorer")
+		self.deletion_button = ctk.CTkButton(master = self.adding_frame,
+			command = self.delete_file,
+	                text = "Delete")
+		self.save_button = ctk.CTkButton(master = self.adding_frame,
+			command = self.save_data,
+			text = "save")
+		self.zoom_button = ctk.CTkButton(master = self.adding_frame,
+			command = self.fig.canvas.toolbar.zoom,
+			text = "zoom")
+		self.pan_button = ctk.CTkButton(master = self.adding_frame,
+			command = self.fig.canvas.toolbar.pan,
+			text = "pan")
+
+		
 
 		self.plus_button = ctk.CTkButton(master = self.cursor_frame,
 			command = lambda: self.incr(1,1),
@@ -125,9 +179,6 @@ class App(ctk.CTk):
 		self.rescale_button = ctk.CTkButton(master = self.options_frame,
 			command = self.rescale,
 			text = "Rescale")
-		self.deletion_button = ctk.CTkButton(master = self.options_frame,
-			command = self.delete_file,
-	                text = "Delete")
 		self.derivative_button = ctk.CTkButton(master = self.math_frame,
 			command = self.derivative,
 			text = "f'")
@@ -144,15 +195,9 @@ class App(ctk.CTk):
 			command = self.all,
 			variable = self.select_all,
 			text = "")
-		self.explorer_button = ctk.CTkButton(master = self.adding_frame,
-			command = self.file_browser,
-			text = "explorer")
 		self.average_button = ctk.CTkButton(master = self.math_frame,
 			command = self.average,
 			text = "average")
-		self.floating_potential_button = ctk.CTkButton(master = self.math_frame,
-			command = self.floating,
-			text = "floating potential")
 		
 		self.basic_isat_button = ctk.CTkButton(master = self.math_frame,
 			command = self.basic_isat,
@@ -170,15 +215,9 @@ class App(ctk.CTk):
 		self.absolute_button = ctk.CTkButton(master = self.math_frame,
 			command = self.absolute_v,
 			text = "|f|")
-		self.temperature_button = ctk.CTkButton(master = self.math_frame,
-			command = self.temp_fit,
-			text = "temp")
 		self.natural_log_button = ctk.CTkButton(master = self.math_frame,
 			command = self.natural,
 			text = "ln")
-		self.save_button = ctk.CTkButton(master = self.math_frame,
-			command = self.save_data,
-			text = "save")
 		
 		self.fit_counter = ctk.CTkLabel(master = self.cursor_frame, textvar = self.fit_bound[0])
 		self.fit_counter_2 = ctk.CTkLabel(master = self.cursor_frame, textvar = self.fit_bound[1])
@@ -209,14 +248,20 @@ class App(ctk.CTk):
 		self.left_frame.grid_columnconfigure(0, weight = 1)
 		
 		self.graph_frame.grid(row=0, column = 0, sticky = "nsew")
-		self.adding_frame.grid(row=1, column = 0, sticky = "ew")
+		self.adding_frame.grid(row=1, column = 0, sticky = "nsew")
 	
-		self.explorer_button.pack()
+		self.explorer_button.grid(row=0, column=0, sticky = "nsew")
+		self.deletion_button.grid(row=0, column=1, sticky = "nsew")
+		self.save_button.grid(row=0, column=2, sticky = "nsew")
+		self.zoom_button.grid(row=0, column=3, sticky = "nsew")
+		self.pan_button.grid(row=0, column=4, sticky = "nsew")
 		
 		self.right_frame.grid_columnconfigure(0, weight=1)
 		self.right_frame.grid_columnconfigure(1, weight=1)
 		self.right_frame.grid_rowconfigure(0, weight=1)
+		self.middle_frame.grid(row=0, column=0, sticky = "nsew")
 		self.selector_frame.grid(row=0, column=0, sticky = "nsew")
+		self.results_frame.grid(row=1, column=0, sticky = "nsew")
 		self.control_frame.grid(row=0, column=1, sticky = "nswe")
 
 		self.control_frame.grid_columnconfigure(0, weight=1)
@@ -230,22 +275,25 @@ class App(ctk.CTk):
 		self.select_all_label.grid(row=0, column=0)
 		self.select_all_button.grid(row=0, column=1)	
 
-		self.deletion_button.pack()
+		self.temperature_frame.pack()
+		self.temperature_button.grid(row = 0, column = 0)
+		self.temperature_label.grid(row = 0, column = 1)
+		self.floating_frame.pack()
+		self.floating_potential_button.grid(row = 0, column = 0)
+		self.floating_label.grid(row = 0, column = 1)
+		
 		self.scale_button.pack()	
 		self.legend_button.pack()
-		self.save_button.pack()
 		self.rescale_button.pack()
 
 		self.derivative_button.pack()
 		self.box_button.pack()
 		self.average_button.pack()
-		self.floating_potential_button.pack()		
 		self.basic_isat_button.pack()
 		self.savgol_button.pack()
 		self.eedf_button.pack()
 		self.plasma_potential_button.pack()
 		self.absolute_button.pack()		
-		self.temperature_button.pack()
 		self.natural_log_button.pack()
 
 		self.cursor_frame.pack()
@@ -265,14 +313,14 @@ class App(ctk.CTk):
 	def hide_cursor(self, n):
 		if n == 1:
 			if self.cursor1.get_linestyle() == "None":
-				self.cursor1.set_linestyle("solid")				
+				self.cursor1.set_linestyle("solid")		
 			else:
-				self.cursor1.set_linestyle("None")				
+				self.cursor1.set_linestyle("None")		
 		elif n == 2: 
 			if self.cursor2.get_linestyle() == "None":
-				self.cursor2.set_linestyle("solid")				
+				self.cursor2.set_linestyle("solid")		
 			else:
-				self.cursor2.set_linestyle("None")				
+				self.cursor2.set_linestyle("None")		
 
 		self.canvas.draw()
 
@@ -287,9 +335,9 @@ class App(ctk.CTk):
 		data_to_write = ""
 		for i in range(len(data[0])):
 			data_to_write += str(data[0][i])
-			data_to_write += ","
+			data_to_write += self.xy_split
 			data_to_write += str(data[1][i])
-			data_to_write += ","
+			data_to_write += "\n"
 
 		data_to_write = data_to_write[:-1]
 		f = open(fname + "_new_write", "w")
@@ -313,6 +361,7 @@ class App(ctk.CTk):
 		fname = self.get_selected()[0]
 		smoothed = self.data_analyzer.savgol_smoothing(self.currently_displayed[fname])	
 		self.add_graph(fname + "_sav", self.currently_displayed[fname][0], smoothed)
+	
 
 	# Get rid of the try except
 	def basic_isat(self):
@@ -323,21 +372,20 @@ class App(ctk.CTk):
 		self.add_graph(fname + "_ecurr", self.currently_displayed[fname][0], electron_current)
 
 	def file_browser(self):
-		try:
-			fnames = tk.filedialog.askopenfilenames(initialdir = starting_dir, title = "Select a File", filetypes = [("data files", "*.txt"), ("csv files", "*.csv"), ("all files","*.*")]) 
+		#try:
+			fnames = tk.filedialog.askopenfilenames(initialdir = starting_dir, title = "Select a File", filetypes = [("csv files", "*.csv"),("data files", "*.txt"),  ("all files","*.*")]) 
 			for fname in fnames:
 				if fname not in self.selector_display.keys():
 					[x,y] = self.get_data(fname)
 					self.add_graph(fname, x, y)
-		except:
-			pass
+					print("!")
+		#except:
+		#	pass
 
 	def floating(self):
 		fname = self.get_selected()[0]
-		asdfasdf = self.data_analyzer.floating_potential(self.currently_displayed[fname])
-		self.cursor_positions.append(asdfasdf[0])
-		self.canvas.draw()
-		return asdfasdf	
+		fp = self.data_analyzer.floating_potential(self.currently_displayed[fname])
+		self.floating_potential.set(fp[0])
 
 	def all(self):
 		v = self.select_all.get()
@@ -407,7 +455,7 @@ class App(ctk.CTk):
 		self.add_graph("average", data[0], data[1])
 
 	def incr(self,n,cnum):
-		self.fit_bound[cnum-1].set(self.fit_bound[cnum-1].get()+n)		
+		self.fit_bound[cnum-1].set(self.fit_bound[cnum-1].get()+n)	
 		if cnum == 1:
 			self.cursor1.set_xdata(self.fit_bound[cnum-1].get())
 		if cnum == 2:
@@ -440,6 +488,8 @@ class App(ctk.CTk):
 		av = np.average(temps)
 		std = np.std(temps)
 		
+		self.temperature.set(str(av) + " +- " + str(std))		
+
 		print("Temp: ", av)
 		print("Bounds: %f to %f" % (av - std, av + std) )
 
@@ -466,15 +516,22 @@ class App(ctk.CTk):
 
 
 	def get_data(self, fname):
-		f = open(fname, "r")
-		vi_data = f.readlines()
-		f.close()
-		
-		# Fix the data into a format usable by the code
-		vi_data = vi_data[0]
-		vi_data = vi_data.split(",")
-		x = np.array([float(vi_data[i]) for i in range(len(vi_data)) if i % 2 == 0])
-		y = np.array([float(vi_data[i]) for i in range(len(vi_data)) if i % 2 == 1])
+		if self.data_type_old == True:
+			f = open(fname, "r")
+			vi_data = f.readlines()
+			f.close()
+			# Fix the data into a format usable by the code
+			vi_data = vi_data[0]
+			vi_data = vi_data.split(",")
+			x = np.array([float(vi_data[i]) for i in range(len(vi_data)) if i % 2 == 0])
+			y = np.array([float(vi_data[i]) for i in range(len(vi_data)) if i % 2 == 1])
+		else:
+			f = open(fname, "r")
+			vi_data = f.readlines()
+			f.close()
+			x = np.array([float(vi_data[i].split(self.xy_split)[0]) for i in range(len(vi_data))])
+			y = np.array([float(vi_data[i].split(self.xy_split)[1]) for i in range(len(vi_data))])
+
 
 		################# EXPERIMENTAL #################
 
@@ -484,7 +541,7 @@ class App(ctk.CTk):
 				y[i] = (y[i+1] + y[i-1])/2		
 
 		return x,y	
-
+ 
 	def add_graph(self, f, x, y):
 		self.currently_displayed.update({f: [x,y]})
 	
