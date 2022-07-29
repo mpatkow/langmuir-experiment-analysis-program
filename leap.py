@@ -29,6 +29,7 @@ except:
 # xi: = probe radius/ debye length
 # formula for debye using epsilong * KT/ne^2
 # when doing manipulations improve the name of the new file
+######" """""" AUTOFEATURES""""
 
 class App(ctk.CTk):
 	def __init__(self):
@@ -305,19 +306,19 @@ class App(ctk.CTk):
 		self.select_all_label.grid(row=0, column=0)
 		self.select_all_button.grid(row=0, column=1)
 
-		self.probe_area_frame.pack()
+		self.probe_area_frame.pack(fill = tk.X)
 		self.probe_area_label.grid(row = 0, column = 0)
 		self.probe_area_input.grid(row = 0, column = 1)
-		self.ion_mass_frame.pack()
+		self.ion_mass_frame.pack(fill = tk.X)
 		self.ion_mass_label.grid(row = 0, column = 0)
 		self.ion_mass_input.grid(row = 0, column = 1)
-		self.temperature_frame.pack()
+		self.temperature_frame.pack(fill=tk.X)
 		self.temperature_button.grid(row = 0, column = 0)
 		self.temperature_label.grid(row = 0, column = 1)
-		self.floating_frame.pack()
+		self.floating_frame.pack(fill=tk.X)
 		self.floating_potential_button.grid(row = 0, column = 0)
 		self.floating_label.grid(row = 0, column = 1)
-		self.debye_frame.pack()
+		self.debye_frame.pack(fill = tk.X)
 		self.debye_button.grid(row = 0, column = 0)
 		self.debye_label.grid(row = 0, column = 1)
 
@@ -436,14 +437,14 @@ class App(ctk.CTk):
 		self.debye_length.set(l_squared ** 0.5)
 
 	def file_browser(self):
-		#try:
-			fnames = tk.filedialog.askopenfilenames(initialdir = starting_dir, title = "Select a File", filetypes = [("csv files", "*.csv"),("data files", "*.txt"),  ("all files","*.*")])
-			for fname in fnames:
-				if fname not in self.selector_display.keys():
-					[x,y] = self.get_data(fname)
+		fnames = tk.filedialog.askopenfilenames(initialdir = starting_dir, title = "Select a File", filetypes = [("csv files", "*.csv"),("data files", "*.txt"),  ("all files","*.*")])
+		for fname in fnames:
+			if fname not in self.selector_display.keys():
+				[x,y] = self.get_data(fname)
+				if x != None and y != None:
 					self.add_graph(fname, x, y)
-		#except:
-		#	pass
+			else:
+				self.open_popup("ERR: file already opened")
 
 	def floating(self):
 		fname = self.get_selected()[0]
@@ -492,6 +493,8 @@ class App(ctk.CTk):
 		self.plot1.set_xlim(minxs,maxxs)
 		self.plot1.set_ylim(minys,maxys)
 		self.canvas.draw()
+
+		self.open_popup("wrong!")
 
 	def get_selected(self):
 		selected = []
@@ -582,34 +585,42 @@ class App(ctk.CTk):
 			except KeyError:
 				print("\a")
 
-
+	def open_popup(self,message):
+		top = ctk.CTkToplevel(self)
+		top.geometry("500x100")
+		top.title("Error!")
+		tk.Label(top, textvariable = tk.StringVar(value = message),fg="red",font = ("courier",50),bg = "#2a2d2e").pack()
 
 	def get_data(self, fname):
-		if self.data_type_old == True:
-			f = open(fname, "r")
-			vi_data = f.readlines()
-			f.close()
-			# Fix the data into a format usable by the code
-			vi_data = vi_data[0]
-			vi_data = vi_data.split(",")
-			x = np.array([float(vi_data[i]) for i in range(len(vi_data)) if i % 2 == 0])
-			y = np.array([float(vi_data[i]) for i in range(len(vi_data)) if i % 2 == 1])
-		else:
-			f = open(fname, "r")
-			vi_data = f.readlines()
-			f.close()
-			x = np.array([float(vi_data[i].split(self.xy_split)[0]) for i in range(len(vi_data))])
-			y = np.array([float(vi_data[i].split(self.xy_split)[1]) for i in range(len(vi_data))])
+		try:
+			if self.data_type_old == True:
+				f = open(fname, "r")
+				vi_data = f.readlines()
+				f.close()
+				# Fix the data into a format usable by the code
+				vi_data = vi_data[0]
+				vi_data = vi_data.split(",")
+				x = np.array([float(vi_data[i]) for i in range(len(vi_data)) if i % 2 == 0])
+				y = np.array([float(vi_data[i]) for i in range(len(vi_data)) if i % 2 == 1])
+			else:
+				f = open(fname, "r")
+				vi_data = f.readlines()
+				f.close()
+				x = np.array([float(vi_data[i].split(self.xy_split)[0]) for i in range(len(vi_data))])
+				y = np.array([float(vi_data[i].split(self.xy_split)[1]) for i in range(len(vi_data))])
 
 
-		################# EXPERIMENTAL #################
+			################# EXPERIMENTAL #################
 
-		avv = np.average(y)
-		for i in range(1,len(y)-1):
-			if abs(y[i]-avv) >= 0.1:
-				y[i] = (y[i+1] + y[i-1])/2
+			avv = np.average(y)
+			for i in range(1,len(y)-1):
+				if abs(y[i]-avv) >= 0.1:
+					y[i] = (y[i+1] + y[i-1])/2
 
-		return x,y
+			return x,y
+		except:
+			self.open_popup("ERR: invalid data")
+			return None,None
 
 	def add_graph(self, f, x, y):
 		self.currently_displayed.update({f: [x,y]})
