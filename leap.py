@@ -441,10 +441,7 @@ class App(ctk.CTk):
 		for fname in fnames:
 			if fname not in self.selector_display.keys():
 				[x,y] = self.get_data(fname)
-				if x == None:
-					pass
-				else:
-					self.add_graph(fname, x, y)
+				self.add_graph(fname, x, y)
 
 			else:
 				self.open_popup("ERR: file already opened")
