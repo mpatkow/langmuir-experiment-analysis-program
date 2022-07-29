@@ -352,10 +352,23 @@ class App(ctk.CTk):
 		self.fit_counter_2.grid(row=1,column=2)
 		self.cursor_show_button_2.grid(row=1,column=5)
 
+	def check_selected_files(self):
+		opened_files = self.get_selected()
+		if len(opened_files) == 0:
+			self.open_popup("NOTICE: no file selected")
+			return 0
+		elif len(opened_files) > 1:
+			self.open_popup("NOTICE: select a single file")
+			return 2
+		else:
+			return 1
+
 	def square(self):
-		fname = self.get_selected()[0]
-		sq = np.square(self.currently_displayed[fname][1])
-		self.add_graph(fname + "_sav", self.currently_displayed[fname][0], sq)
+		if self.check_selected_files() == 1:
+			fname = self.get_selected()[0]
+			newfname = fname.split("/")[-1].split(".")[-2] + "_sq." + fname.split("/")[-1].split(".")[-1]
+			sq = np.square(self.currently_displayed[fname][1])
+			self.add_graph(newfname, self.currently_displayed[fname][0], sq)
 
 	def hide_cursor(self, n):
 		if n == 1:
@@ -406,6 +419,8 @@ class App(ctk.CTk):
 
 	# Savgol filter on selected files
 	def savgol(self):
+		if len(self.get_selected()) == 0:
+			self.open_popup("NOTICE: no file selected")
 		for fname in self.get_selected():
 			try:
 				smoothed = self.data_analyzer.savgol_smoothing(self.currently_displayed[fname])
@@ -436,20 +451,11 @@ class App(ctk.CTk):
 		l_squared = 8.8641878128*10**(-12)*float(self.temperature.get())/(1.60217663*10**(-19) * self.density.get() * 10**6)
 		self.debye_length.set(l_squared ** 0.5)
 
-	def file_browser(self):
-		fnames = tk.filedialog.askopenfilenames(initialdir = starting_dir, title = "Select a File", filetypes = [("csv files", "*.csv"),("data files", "*.txt"),  ("all files","*.*")])
-		for fname in fnames:
-			if fname not in self.selector_display.keys():
-				[x,y] = self.get_data(fname)
-				self.add_graph(fname, x, y)
-
-			else:
-				self.open_popup("ERR: file already opened")
-
 	def floating(self):
-		fname = self.get_selected()[0]
-		fp = self.data_analyzer.floating_potential(self.currently_displayed[fname])
-		self.floating_potential.set(fp[0])
+		if self.check_selected_files() == 1:
+			fname = self.get_selected()[0]
+			fp = self.data_analyzer.floating_potential(self.currently_displayed[fname])
+			self.floating_potential.set(fp[0])
 
 	def all(self):
 		v = self.select_all.get()
@@ -488,13 +494,10 @@ class App(ctk.CTk):
 		minys = float(min(ys))
 		maxxs = float(max(xs))
 		maxys = float(max(ys))
-		print(minxs, maxxs, minys, maxys)
 
 		self.plot1.set_xlim(minxs,maxxs)
 		self.plot1.set_ylim(minys,maxys)
 		self.canvas.draw()
-
-		self.open_popup("wrong!")
 
 	def get_selected(self):
 		selected = []
@@ -587,9 +590,25 @@ class App(ctk.CTk):
 
 	def open_popup(self,message):
 		top = ctk.CTkToplevel(self)
-		top.geometry("500x100")
+		top.geometry("1000x100")
 		top.title("Error!")
 		tk.Label(top, textvariable = tk.StringVar(value = message),fg="red",font = ("courier",50),bg = "#2a2d2e").pack()
+
+	def file_browser(self):
+		fnames = tk.filedialog.askopenfilenames(initialdir = starting_dir, title = "Select a File", filetypes = [("csv files", "*.csv"),("data files", "*.txt"),  ("all files","*.*")])
+		for fname in fnames:
+			if fname not in self.selector_display.keys():
+				[x,y] = self.get_data(fname)
+				try:
+					if x == None or y == None:
+						pass
+					else:
+						self.add_graph(fname, x, y)
+				except:
+					self.add_graph(fname, x, y)
+
+			else:
+				self.open_popup("NOTICE: file already opened")
 
 	def get_data(self, fname):
 		try:

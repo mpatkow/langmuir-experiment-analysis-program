@@ -88,3 +88,6 @@ class data_manipulator:
 		Ii = data[1][lower_bound] ** 0.5
 		density = np.pi / (2**0.5) * Ii / (probe_area_m2 * 1.60217663 * 10**(-19)) * ion_mass ** 0.5 / (1.60217663 * 10**(-19)*(vs1-Vp))**0.5
 		return density/(10**6)
+
+	def ion_saturation_basic_auto(self, data):
+		pass
