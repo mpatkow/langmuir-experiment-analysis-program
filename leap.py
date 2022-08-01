@@ -27,9 +27,9 @@ except:
 # When adding a product of an original graph it is possible to add multiples. Fix this.
 # vspace
 # xi: = probe radius/ debye length
-# formula for debye using epsilong * KT/ne^2
 # when doing manipulations improve the name of the new file
 ######" """""" AUTOFEATURES""""
+# Cursors break if not in order
 
 class App(ctk.CTk):
 	def __init__(self):
@@ -72,6 +72,8 @@ class App(ctk.CTk):
 		self.floating_potential = tk.DoubleVar()
 		self.debye_length = tk.DoubleVar()
 		self.density = tk.DoubleVar()
+		self.probe_radius = tk.DoubleVar()
+		self.debye_ratio = tk.DoubleVar()
 
 		# Frames
 		self.left_frame = ctk.CTkFrame()
@@ -129,11 +131,19 @@ class App(ctk.CTk):
 		self.debye_frame = ctk.CTkFrame(master = self.results_frame)
 		self.debye_button = ctk.CTkButton(master = self.debye_frame,
 			command = self.debye,
-			text = "lD:",
+			text = "lD (fix):",
 			height = 30,
 			width = 30)
 		self.debye_label = ctk.CTkLabel(master = self.debye_frame,
 			textvar = self.debye_length)
+		self.debye_ratio_frame = ctk.CTkFrame(master = self.results_frame)
+		self.debye_ratio_button = ctk.CTkButton(master = self.debye_ratio_frame,
+			command = self.debye_ratio,
+			text = "e(fix this_):",
+			height = 30,
+			width = 30)
+		self.debye_ratio_label = ctk.CTkLabel(master = self.debye_ratio_frame,
+			textvar = self.debye_ratio_calculate)
 
 		# The figure that will contain the plot and adding the plot
 		self.fig = Figure(figsize = (int(self.options[0]),int(self.options[0])), dpi = 100)
@@ -228,6 +238,9 @@ class App(ctk.CTk):
 		self.basic_isat_button = ctk.CTkButton(master = self.math_frame,
 			command = self.basic_isat,
 			text = "basic isat")
+		self.basic_isat_button_auto = ctk.CTkButton(master = self.math_frame,
+			command = self.basic_isat_auto,
+			text = "basic isat auto")
 		self.savgol_button = ctk.CTkButton(master = self.math_frame,
 			command = self.savgol,
 			text = "savgol filter")
@@ -321,6 +334,9 @@ class App(ctk.CTk):
 		self.debye_frame.pack(fill = tk.X)
 		self.debye_button.grid(row = 0, column = 0)
 		self.debye_label.grid(row = 0, column = 1)
+		self.debye_ratio_frame.pack(fill = tk.X)
+		self.debye_ratio_button.grid(row = 0, column = 0)
+		self.debye_ratio_label.grid(row = 0, column = 1)
 
 		self.scale_button.pack()
 		self.legend_button.pack()
@@ -330,6 +346,7 @@ class App(ctk.CTk):
 		self.box_button.pack()
 		self.average_button.pack()
 		self.basic_isat_button.pack()
+		self.basic_isat_button_auto.pack()
 		self.savgol_button.pack()
 		self.eedf_button.pack()
 		self.plasma_potential_button.pack()
@@ -362,6 +379,9 @@ class App(ctk.CTk):
 			return 2
 		else:
 			return 1
+
+	def debye_ratio_calculate(self):
+		self.debye_ratio.set(self.probe_radius.get())/(self.debye_length.get())
 
 	def square(self):
 		if self.check_selected_files() == 1:
@@ -438,6 +458,13 @@ class App(ctk.CTk):
 		self.add_graph(fname + "_isat", self.currently_displayed[fname][0], isat)
 		self.add_graph(fname + "_ecurr", self.currently_displayed[fname][0], electron_current)
 
+	def basic_isat_auto(self):
+		fname = self.get_selected()[0]
+		data_t = self.currently_displayed[fname]
+		isat,electron_current = self.data_analyzer.ion_saturation_basic_auto(data_t)
+		self.add_graph(fname + "_isat", self.currently_displayed[fname][0], isat)
+		self.add_graph(fname + "_ecurr", self.currently_displayed[fname][0], electron_current)
+
 	def oml(self):
 		fname = self.get_selected()[0]
 		data_t = self.currently_displayed[fname]
@@ -446,9 +473,10 @@ class App(ctk.CTk):
 		#density = self.data_analyzer.oml_theory(data_t,np.where(lower_abs == np.min(lower_abs))[0][0],np.where(upper_abs == np.min(upper_abs))[0][0],self.probe_area_input.get(),self.ion_mass_input.get())
 		ddd = self.data_analyzer.oml_theory(data_t,np.where(lower_abs == np.min(lower_abs))[0][0],np.where(upper_abs == np.min(upper_abs))[0][0],0.047,6.62 * 10**(-26))
 		self.density.set(ddd)
+		print(ddd)
 
 	def debye(self):
-		l_squared = 8.8641878128*10**(-12)*float(self.temperature.get())/(1.60217663*10**(-19) * self.density.get() * 10**6)
+		l_squared = 8.8541878128*10**(-12)*float(self.temperature.get().split(' ')[0])/(1.60217663*10**(-19) * float(self.density.get()) * 10**6)
 		self.debye_length.set(l_squared ** 0.5)
 
 	def floating(self):

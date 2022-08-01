@@ -89,5 +89,24 @@ class data_manipulator:
 		density = np.pi / (2**0.5) * Ii / (probe_area_m2 * 1.60217663 * 10**(-19)) * ion_mass ** 0.5 / (1.60217663 * 10**(-19)*(vs1-Vp))**0.5
 		return density/(10**6)
 
-	def ion_saturation_basic_auto(self, data):
-		pass
+	def ion_saturation_basic_auto(self, data, tolerance = 0.01):
+		first_smooth = [data[0],self.savgol_smoothing(data)]
+		first_der = self.derivative(first_smooth, 1)
+		first_der_smooth = [data[0],self.savgol_smoothing(first_der)]
+		second_der = self.derivative(first_der_smooth, 1)
+		second_der_smooth = [data[0],self.savgol_smoothing(second_der)]
+		second_der_smooth = [data[0], np.absolute(data[1])]
+
+		max_second_der_smooth = np.max(second_der_smooth[1])
+		isat_region = second_der_smooth[1] < tolerance * max_second_der_smooth
+
+		# Account for some possible stray data points so you must take longest sequence of trues.
+
+		isat_guess_lower = np.where(isat_region == True)[0][0]
+		isat_guess_upper = np.where(isat_region == True)[0][-1]
+
+		print(isat_guess_lower)
+		print(isat_guess_upper)
+
+		m,b = np.polyfit(data[0][isat_guess_lower:isat_guess_upper], data[1][isat_guess_lower:isat_guess_upper], 1)
+		return m*data[0] + b, data[1] - m*data[0] -b
