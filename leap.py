@@ -14,26 +14,23 @@ import math
 
 ctk.set_appearance_mode("Dark")  # Modes: system (default), light, dark
 ctk.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
-
 plt.style.use("default")
 
-# Optional starting directory
-try:
-	starting_dir = sys.argv[1]
-except:
-	starting_dir = "~"
-
-
 # When adding a product of an original graph it is possible to add multiples. Fix this.
-# vspace
-# xi: = probe radius/ debye length
 # when doing manipulations improve the name of the new file
 ######" """""" AUTOFEATURES""""
-# Cursors break if not in order
+
 
 class App(ctk.CTk):
 	def __init__(self):
 		super().__init__()
+
+
+		# Optional starting directory
+		try:
+			self.starting_dir = sys.argv[1]
+		except:
+			self.starting_dir = "~"
 
 		# Set up the basic window things
 		self.WIDTH = 1400
@@ -386,7 +383,7 @@ class App(ctk.CTk):
 	def square(self):
 		if self.check_selected_files() == 1:
 			fname = self.get_selected()[0]
-			newfname = fname.split("/")[-1].split(".")[-2] + "_sq." + fname.split("/")[-1].split(".")[-1]
+			newfname = self.get_next_name(fname)
 			sq = np.square(self.currently_displayed[fname][1])
 			self.add_graph(newfname, self.currently_displayed[fname][0], sq)
 
@@ -623,7 +620,7 @@ class App(ctk.CTk):
 		tk.Label(top, textvariable = tk.StringVar(value = message),fg="red",font = ("courier",50),bg = "#2a2d2e").pack()
 
 	def file_browser(self):
-		fnames = tk.filedialog.askopenfilenames(initialdir = starting_dir, title = "Select a File", filetypes = [("csv files", "*.csv"),("data files", "*.txt"),  ("all files","*.*")])
+		fnames = tk.filedialog.askopenfilenames(initialdir = self.starting_dir, title = "Select a File", filetypes = [("csv files", "*.csv"),("data files", "*.txt"),  ("all files","*.*")])
 		for fname in fnames:
 			if fname not in self.selector_display.keys():
 				[x,y] = self.get_data(fname)
@@ -714,6 +711,23 @@ class App(ctk.CTk):
 	def plot(self,x,y):
 		self.plot1.plot(x,y,'o')
 		self.canvas.draw()
+
+	def get_next_name(self,prelim):
+		relevant_numbers = []
+		prelim_type = prelim.split(".")[0].split("__")[0]
+		for f in self.selector_display.keys():
+			if prelim_type == f.split(".")[0].split("__")[0]:
+				try:
+					relevant_numbers.append(int(f.split(".")[0].split("__")[-1]))
+				except:
+					pass
+
+		i = 0
+		while i in relevant_numbers:
+			i+=1
+
+		return prelim.split(".")[0].split("__")[0] + "__" + str(i) + "." + prelim.split(".")[-1]
+
 
 
 if __name__ == "__main__":
