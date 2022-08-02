@@ -11,6 +11,7 @@ from matplotlib import pyplot as plt
 import data_manipulator
 import platform
 import math
+from tkinter.filedialog import asksaveasfilename
 
 ctk.set_appearance_mode("Dark")  # Modes: system (default), light, dark
 ctk.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
@@ -164,7 +165,10 @@ class App(ctk.CTk):
 	                text = "Delete")
 		self.save_button = ctk.CTkButton(master = self.adding_frame,
 			command = self.save_data,
-			text = "save")
+			text = "save data")
+		self.save_image_button = ctk.CTkButton(master = self.adding_frame,
+			command = self.save_image_data,
+			text = "save image")
 		self.zoom_button = ctk.CTkButton(master = self.adding_frame,
 			command = self.fig.canvas.toolbar.zoom,
 			text = "zoom")
@@ -294,6 +298,7 @@ class App(ctk.CTk):
 		self.save_button.grid(row=0, column=2, sticky = "nsew")
 		self.zoom_button.grid(row=0, column=3, sticky = "nsew")
 		self.pan_button.grid(row=0, column=4, sticky = "nsew")
+		self.save_image_button.grid(row=0, column=5, sticky = "nsew")
 
 		self.right_frame.grid_columnconfigure(0, weight=1)
 		self.right_frame.grid_columnconfigure(1, weight=1)
@@ -417,9 +422,17 @@ class App(ctk.CTk):
 			data_to_write += "\n"
 
 		data_to_write = data_to_write[:-1]
-		f = open(fname + "_new_write", "w")
+		name_to_write_to = asksaveasfilename(initialfile = "", defaultextension=".txt", filetypes=[("Text Files","*.txt"),("Csv Files", "*.csv"), ("All Files", "*.*")])
+		f = open(name_to_write_to, "w")
 		f.write(data_to_write)
 		f.close()
+
+	def save_image_data(self):
+		fname = asksaveasfilename(initialfile = "", defaultextension=".png", filetypes=[("Png Files","*.png"),("Jpg Files", "*.jpg"), ("All Files", "*.*")])
+		if fname is None:
+			return 
+		self.fig.savefig(fname,dpi = plt.gcf().dpi)
+		self.canvas.draw()
 
 	def plasma_potential(self):
 		fname = self.get_selected()[0]
