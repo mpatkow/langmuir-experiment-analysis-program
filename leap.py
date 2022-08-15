@@ -98,7 +98,7 @@ class App(ctk.CTk):
 		self.temperature_frame = ctk.CTkFrame(master = self.results_frame)
 		self.temperature_button = ctk.CTkButton(master = self.temperature_frame,
 			command = self.temp_fit,
-			text = "kTe:",
+			text = u"kT\u2091",
 			height = 30,
 			width = 30)
 		self.temperature_label = ctk.CTkLabel(master = self.temperature_frame,
@@ -106,7 +106,7 @@ class App(ctk.CTk):
 		self.floating_frame = ctk.CTkFrame(master = self.results_frame)
 		self.floating_potential_button = ctk.CTkButton(master = self.floating_frame,
 			command = self.floating,
-			text = "Vf:",
+			text = "Vf",
 			height = 30,
 			width = 30)
 		self.floating_label = ctk.CTkLabel(master = self.floating_frame,
@@ -117,18 +117,18 @@ class App(ctk.CTk):
 			height = 25,
 			corner_radius = 10)
 		self.probe_area_label = ctk.CTkLabel(master = self.probe_area_frame,
-			text = "Ap (cm^2):")
+			text = "Ap (cm^2)")
 		self.ion_mass_frame = ctk.CTkFrame(master = self.results_frame)
 		self.ion_mass_input = ctk.CTkEntry(master = self.ion_mass_frame,
 			width = 120,
 			height = 25,
 			corner_radius = 10)
 		self.ion_mass_label = ctk.CTkLabel(master = self.ion_mass_frame,
-			text = "M (kg):")
+			text = "M (kg)")
 		self.debye_frame = ctk.CTkFrame(master = self.results_frame)
 		self.debye_button = ctk.CTkButton(master = self.debye_frame,
 			command = self.debye,
-			text = "lD (fix):",
+			text = u"\u03BB debye",
 			height = 30,
 			width = 30)
 		self.debye_label = ctk.CTkLabel(master = self.debye_frame,
@@ -369,10 +369,10 @@ class App(ctk.CTk):
 	def check_selected_files(self):
 		opened_files = self.get_selected()
 		if len(opened_files) == 0:
-			self.open_popup("NOTICE: no file selected")
+			self.open_popup("NOTICE: no file selected", True)
 			return 0
 		elif len(opened_files) > 1:
-			self.open_popup("NOTICE: select a single file")
+			self.open_popup("NOTICE: select a single file", True)
 			return 2
 		else:
 			return 1
@@ -437,7 +437,7 @@ class App(ctk.CTk):
 	# Savgol filter on selected files
 	def savgol(self):
 		if len(self.get_selected()) == 0:
-			self.open_popup("NOTICE: no file selected")
+			self.open_popup("NOTICE: no file selected", True)
 		for fname in self.get_selected():
 			try:
 				smoothed = self.data_analyzer.savgol_smoothing(self.currently_displayed[fname])
@@ -548,8 +548,10 @@ class App(ctk.CTk):
 		for fname in self.get_selected():
 			data_to_average.append(self.currently_displayed[fname])
 		# TODO broken
+		fname = self.get_selected()[0]
+		newfname = self.get_next_name(fname)
 		data = self.data_analyzer.average(data_to_average)
-		self.add_graph("average", data[0], data[1])
+		self.add_graph(newfname, data[0], data[1])
 
 	def incr(self,n,cnum):
 		self.fit_bound[cnum-1].set(self.fit_bound[cnum-1].get()+n)
@@ -613,11 +615,16 @@ class App(ctk.CTk):
 			except KeyError:
 				print("\a")
 
-	def open_popup(self,message):
+	def open_popup(self,message,warn):
 		top = ctk.CTkToplevel(self)
-		top.geometry("1000x100")
-		top.title("Error!")
-		tk.Label(top, textvariable = tk.StringVar(value = message),fg="red",font = ("courier",50),bg = "#2a2d2e").pack()
+		if warn:
+			top.geometry("1000x100")
+			top.title("Warning!")
+			tk.Label(top, textvariable = tk.StringVar(value = message),fg="yellow",font = ("courier",50),bg = "#2a2d2e").pack()
+		else:
+			top.geometry("1000x100")
+			top.title("Error!")
+			tk.Label(top, textvariable = tk.StringVar(value = message),fg="red",font = ("courier",50),bg = "#2a2d2e").pack()
 
 	def file_browser(self):
 		fnames = tk.filedialog.askopenfilenames(initialdir = self.starting_dir, title = "Select a File", filetypes = [("csv files", "*.csv"),("data files", "*.txt"),  ("all files","*.*")])
@@ -633,7 +640,7 @@ class App(ctk.CTk):
 					self.add_graph(fname, x, y)
 
 			else:
-				self.open_popup("NOTICE: file already opened")
+				self.open_popup("NOTICE: file already opened", True)
 
 	def get_data(self, fname):
 		try:
@@ -663,7 +670,7 @@ class App(ctk.CTk):
 
 			return x,y
 		except:
-			self.open_popup("ERR: invalid data")
+			self.open_popup("ERR: invalid data", False)
 			return None,None
 
 	def add_graph(self, f, x, y):
