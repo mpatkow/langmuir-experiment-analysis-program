@@ -74,8 +74,15 @@ class App(ctk.CTk):
 		self.floating_potential = tk.DoubleVar()
 		self.debye_length = tk.DoubleVar()
 		self.density = tk.DoubleVar()
+		# TODO
+		self.probe_area = 0.738 *0.01 * 0.01
+		self.gas_type = 6.62*10**(-26)
 		self.probe_radius = tk.DoubleVar()
 		self.debye_ratio = tk.DoubleVar()
+		self.normal_vp = tk.DoubleVar()
+		self.bounds = [tk.IntVar(value=0),tk.IntVar(value=0),tk.IntVar(value=0),tk.IntVar(value=0)]
+		self.bounds1 = tk.StringVar(value = str(self.bounds[0].get()) + " to " + str(self.bounds[1].get()))
+		self.bounds2 = tk.StringVar(value = str(self.bounds[2].get()) + " to " + str(self.bounds[3].get()))
 
 		LEAP_Frames.LEAP_Frames(self)
 		LEAP_Buttons.LEAP_Buttons(self)
@@ -142,7 +149,7 @@ class App(ctk.CTk):
 		self.debye_ratio_frame.pack(fill = tk.X)
 		self.debye_ratio_button.grid(row = 0, column = 0)
 		self.debye_ratio_label.grid(row = 0, column = 1)
-		self.temperature_sef.put_on_screen()
+		self.basic_density_sef.put_on_screen()
 
 		self.scale_button.pack()
 		self.legend_button.pack()
@@ -160,6 +167,14 @@ class App(ctk.CTk):
 		self.natural_log_button.pack()
 		self.square_button.pack()
 		self.oml_button.pack()
+
+		self.normal_plasma_potential_method_frame.pack()
+		self.potential_bounds_1_button.grid(row=0,column=0)
+		self.potential_bounds_1_label.grid(row=0,column=1)
+		self.potential_bounds_2_button.grid(row=1,column=0)
+		self.potential_bounds_2_label.grid(row=1,column=1)
+		self.normal_potential_button.grid(row=2,column=0)
+		self.normal_potential_label.grid(row=2,column=1)
 
 		self.cursor_frame.pack()
 		self.minus_button_l.grid(row=0,column=0)
@@ -212,12 +227,44 @@ class App(ctk.CTk):
 	def debye_ratio_calculate(self):
 		self.debye_ratio.set(self.probe_radius.get())/(self.debye_length.get())
 
+	def normal_potential(self):
+		a1 = self.bounds[0].get()
+		a2 = self.bounds[1].get()
+		b1 = self.bounds[2].get()
+		b2 = self.bounds[3].get()
+
+		fname = self.get_selected()[0]
+		data_t = self.currently_displayed[fname]
+		m1,intercept1 = np.polyfit(data_t[0][a1:a2], data_t[1][a1:a2], 1)
+		m2,intercept2 = np.polyfit(data_t[0][b1:b2], data_t[1][b1:b2], 1)
+		self.normal_vp.set((intercept2-intercept1)/(m1-m2))
+
 	def square(self):
 		if self.check_selected_files() == 1:
 			fname = self.get_selected()[0]
 			newfname = self.get_next_name(fname)
 			sq = np.square(self.currently_displayed[fname][1])
 			self.add_graph(newfname, self.currently_displayed[fname][0], sq)
+
+	def save_bounds_1(self):
+		fname = self.get_selected()[0]
+		cvalues = self.get_cursor_values(fname, self.currently_displayed)
+		self.bounds[0].set(cvalues[0])
+		self.bounds[1].set(cvalues[1])
+		self.bounds1.set(value = str(int(self.currently_displayed[fname][0][self.bounds[0].get()])) + " to " + str(int(self.currently_displayed[fname][0][self.bounds[1].get()])))
+
+	def save_bounds_2(self):
+		fname = self.get_selected()[0]
+		cvalues = self.get_cursor_values(fname, self.currently_displayed)
+		self.bounds[2].set(cvalues[0])
+		self.bounds[3].set(cvalues[1])
+		self.bounds2.set(value = str(int(self.currently_displayed[fname][0][self.bounds[2].get()])) + " to " + str(int(self.currently_displayed[fname][0][self.bounds[3].get()])))
+
+	def basic_density(self):
+		fname = self.get_selected()[0]
+		isat_value = abs(self.currently_displayed[fname][1][10])
+		ne = isat_value/(1.602*10**(-19) * self.probe_area * 2.7183 ** (-0.5)) * (self.gas_type/ (float(self.temperature.get().split(' ')[0]) * 1.602*10**(-19)) ) ** 0.5
+		print(ne)
 
 	def absolute_v(self):
 		if self.check_selected_files() == 1:

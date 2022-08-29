@@ -36,3 +36,5 @@ class LEAP_Frames:
             tkinter_frame.canvas.draw()
             tkinter_frame.results_frame = ctk.CTkFrame(master = tkinter_frame.middle_frame)
             tkinter_frame.temperature_frame = ctk.CTkFrame(master = tkinter_frame.results_frame)
+
+            tkinter_frame.normal_plasma_potential_method_frame = ctk.CTkFrame(master = tkinter_frame.math_frame)

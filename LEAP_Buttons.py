@@ -53,7 +53,7 @@ class LEAP_Buttons:
         tkinter_frame.debye_ratio_label = ctk.CTkLabel(master = tkinter_frame.debye_ratio_frame,
         	textvar = tkinter_frame.debye_ratio_calculate)
 
-        tkinter_frame.temperature_sef = sef.SmartEnterField(tkinter_frame.results_frame, "b_test", "Ci", lambda: print("hi"))
+        tkinter_frame.basic_density_sef = sef.SmartEnterField(tkinter_frame.results_frame, "bdense", u" m\u207B\u00B3", tkinter_frame.basic_density)
 
 
         """ ADDING FRAME """
@@ -162,6 +162,23 @@ class LEAP_Buttons:
         tkinter_frame.oml_button = ctk.CTkButton(master = tkinter_frame.math_frame,
         	command = tkinter_frame.oml,
         	text = "oml")
+
+        tkinter_frame.potential_bounds_1_button = ctk.CTkButton(master = tkinter_frame.normal_plasma_potential_method_frame,
+            command = tkinter_frame.save_bounds_1,
+            text = "Vp bounds 1:")
+        tkinter_frame.potential_bounds_1_label = ctk.CTkLabel(master = tkinter_frame.normal_plasma_potential_method_frame,
+            textvar = tkinter_frame.bounds1)
+        tkinter_frame.potential_bounds_2_button = ctk.CTkButton(master = tkinter_frame.normal_plasma_potential_method_frame,
+            command = tkinter_frame.save_bounds_2,
+            text = "Vp bounds 2:")
+        tkinter_frame.potential_bounds_2_label = ctk.CTkLabel(master = tkinter_frame.normal_plasma_potential_method_frame,
+            textvar = tkinter_frame.bounds2)
+        tkinter_frame.normal_potential_button = ctk.CTkButton(master = tkinter_frame.normal_plasma_potential_method_frame,
+            command = tkinter_frame.normal_potential,
+            text = "NVp:")
+        tkinter_frame.normal_potential_label = ctk.CTkLabel(master = tkinter_frame.normal_plasma_potential_method_frame,
+            textvar = tkinter_frame.normal_vp)
+
 
         tkinter_frame.fit_counter = ctk.CTkLabel(master = tkinter_frame.cursor_frame, textvar = tkinter_frame.fit_bound[0])
         tkinter_frame.fit_counter_2 = ctk.CTkLabel(master = tkinter_frame.cursor_frame, textvar = tkinter_frame.fit_bound[1])
