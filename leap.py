@@ -14,6 +14,7 @@ from tkinter.filedialog import asksaveasfilename
 import LEAP_Frames
 import LEAP_Buttons
 import Options
+import Widget_Redrawer
 
 ctk.set_appearance_mode("Dark")  # Modes: system (default), light, dark
 ctk.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
@@ -26,6 +27,7 @@ plt.style.use("default")
 ######### HELP MENU
 # add primitive, tkinter mode
 # store long decimals in terminal cut off to two places on gui
+# high density vs low density mode
 
 class App(ctk.CTk):
 	def __init__(self):
@@ -49,6 +51,8 @@ class App(ctk.CTk):
 		option_file = open("options.txt", "r")
 		self.options = [l.split("\t")[1][:-1] for l in option_file.readlines()]
 		option_file.close()
+
+		self.WR = Widget_Redrawer.Widget_Redrawer()
 
 		self.currently_displayed = {}
 		self.selector_display = {}
@@ -89,108 +93,7 @@ class App(ctk.CTk):
 		self.redraw_widgets()
 
 	def redraw_widgets(self):
-		self.grid_columnconfigure(0,weight=1)
-		self.grid_columnconfigure(1,weight=1)
-		self.grid_rowconfigure(0,weight=1)
-
-		self.left_frame.grid(row=0, column = 0, sticky="nsew")
-		self.right_frame.grid(row=0, column = 1, sticky="nsew")
-
-		self.left_frame.grid_rowconfigure(0, weight = 4)
-		self.left_frame.grid_rowconfigure(1, weight = 1)
-		self.left_frame.grid_columnconfigure(0, weight = 1)
-
-		self.graph_frame.grid(row=0, column = 0, sticky = "nsew")
-		self.adding_frame.grid(row=1, column = 0, sticky = "nsew")
-
-		self.explorer_button.grid(row=0, column=0, sticky = "nsew")
-		self.deletion_button.grid(row=0, column=1, sticky = "nsew")
-		self.save_button.grid(row=0, column=2, sticky = "nsew")
-		self.zoom_button.grid(row=0, column=3, sticky = "nsew")
-		self.pan_button.grid(row=0, column=4, sticky = "nsew")
-		self.save_image_button.grid(row=0, column=5, sticky = "nsew")
-
-		self.right_frame.grid_columnconfigure(0, weight=1)
-		self.right_frame.grid_columnconfigure(1, weight=1)
-		self.right_frame.grid_rowconfigure(0, weight=1)
-		self.middle_frame.grid(row=0, column=0, sticky = "nswe")
-		self.middle_frame.grid_rowconfigure(0, weight = 1)
-		self.middle_frame.grid_rowconfigure(1, weight = 1)
-		self.selector_frame.grid(row=0, column=0, sticky = "nswe")
-		self.results_frame.grid(row=1, column=0, sticky = "nswe")
-		self.control_frame.grid(row=0, column=1, sticky = "nswe")
-
-		self.control_frame.grid_columnconfigure(0, weight=1)
-		self.control_frame.grid_rowconfigure(0, weight=1)
-		self.control_frame.grid_rowconfigure(1, weight=2)
-
-		self.options_frame.grid(row=0, column=0)
-		self.math_frame.grid(row=1, column=0)
-
-		self.select_all_frame.pack()
-		self.select_all_label.grid(row=0, column=0)
-		self.select_all_button.grid(row=0, column=1)
-
-		self.probe_area_frame.pack(fill = tk.X)
-		self.probe_area_label.grid(row = 0, column = 0)
-		self.probe_area_input.grid(row = 0, column = 1)
-		self.ion_mass_frame.pack(fill = tk.X)
-		self.ion_mass_label.grid(row = 0, column = 0)
-		self.ion_mass_input.grid(row = 0, column = 1)
-		self.temperature_frame.pack(fill=tk.X)
-		self.temperature_button.grid(row = 0, column = 0)
-		self.temperature_label.grid(row = 0, column = 1)
-		self.floating_frame.pack(fill=tk.X)
-		self.floating_potential_button.grid(row = 0, column = 0)
-		self.floating_label.grid(row = 0, column = 1)
-		self.debye_frame.pack(fill = tk.X)
-		self.debye_button.grid(row = 0, column = 0)
-		self.debye_label.grid(row = 0, column = 1)
-		self.debye_ratio_frame.pack(fill = tk.X)
-		self.debye_ratio_button.grid(row = 0, column = 0)
-		self.debye_ratio_label.grid(row = 0, column = 1)
-		self.basic_density_sef.put_on_screen()
-
-		self.scale_button.pack()
-		self.legend_button.pack()
-		self.rescale_button.pack()
-
-		self.derivative_button.pack()
-		self.box_button.pack()
-		self.average_button.pack()
-		self.basic_isat_button.pack()
-		self.basic_isat_button_auto.pack()
-		self.savgol_button.pack()
-		self.eedf_button.pack()
-		self.plasma_potential_button.pack()
-		self.absolute_button.pack()
-		self.natural_log_button.pack()
-		self.square_button.pack()
-		self.oml_button.pack()
-
-		self.normal_plasma_potential_method_frame.pack()
-		self.potential_bounds_1_button.grid(row=0,column=0)
-		self.potential_bounds_1_label.grid(row=0,column=1)
-		self.potential_bounds_2_button.grid(row=1,column=0)
-		self.potential_bounds_2_label.grid(row=1,column=1)
-		self.normal_potential_button.grid(row=2,column=0)
-		self.normal_potential_label.grid(row=2,column=1)
-
-		self.cursor_frame.pack()
-		self.minus_button_l.grid(row=0,column=0)
-		self.minus_button.grid(row=0,column=1)
-		self.plus_button.grid(row=0,column=3)
-		self.plus_button_l.grid(row=0,column=4)
-		self.fit_counter.grid(row=0,column=2)
-		self.cursor_show_button.grid(row=0,column=5)
-		self.minus_button_l_2.grid(row=1,column=0)
-		self.minus_button_2.grid(row=1,column=1)
-		self.plus_button_2.grid(row=1,column=3)
-		self.plus_button_l_2.grid(row=1,column=4)
-		self.fit_counter_2.grid(row=1,column=2)
-		self.cursor_show_button_2.grid(row=1,column=5)
-
-		self.open_help_and_options_button.pack()
+		self.WR.redraw_widgets(self)
 
 	def check_selected_files(self):
 		opened_files = self.get_selected()

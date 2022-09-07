@@ -145,7 +145,7 @@ class LEAP_Buttons:
         	text = "basic isat auto")
         tkinter_frame.savgol_button = ctk.CTkButton(master = tkinter_frame.math_frame,
         	command = tkinter_frame.savgol,
-        	text = "savgol filter")
+        	text = "S-G Filter")
         tkinter_frame.eedf_button = ctk.CTkButton(master = tkinter_frame.math_frame,
         	command = tkinter_frame.eedf,
         	text = "EEDF",
