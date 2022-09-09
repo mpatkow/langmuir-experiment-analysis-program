@@ -146,6 +146,9 @@ class LEAP_Buttons:
         tkinter_frame.savgol_button = ctk.CTkButton(master = tkinter_frame.math_frame,
         	command = tkinter_frame.savgol,
         	text = "S-G Filter")
+        tkinter_frame.spline_button = ctk.CTkButton(master = tkinter_frame.math_frame,
+        	command = tkinter_frame.spline_extrapolate,
+        	text = "Spline")
         tkinter_frame.eedf_button = ctk.CTkButton(master = tkinter_frame.math_frame,
         	command = tkinter_frame.eedf,
         	text = "EEDF",

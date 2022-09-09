@@ -15,6 +15,7 @@ import LEAP_Frames
 import LEAP_Buttons
 import Options
 import Widget_Redrawer
+from scipy import interpolate as itp
 
 ctk.set_appearance_mode("Dark")  # Modes: system (default), light, dark
 ctk.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
@@ -28,6 +29,7 @@ plt.style.use("default")
 # add primitive, tkinter mode
 # store long decimals in terminal cut off to two places on gui
 # high density vs low density mode
+# add in data range to view instead of whole sweep.
 
 class App(ctk.CTk):
 	def __init__(self):
@@ -220,6 +222,7 @@ class App(ctk.CTk):
 		ee = self.data_analyzer.druyvesteyn(self.currently_displayed[fname],vp)
 		self.add_graph(fname + "_ee", self.currently_displayed[fname][0], ee)
 
+	#TEMPORARILIY DOING SPLREP/SPLEV
 	def savgol(self):
 		if len(self.get_selected()) == 0:
 			self.open_popup("NOTICE: no file selected", True)
@@ -227,6 +230,17 @@ class App(ctk.CTk):
 			try:
 				smoothed = self.data_analyzer.savgol_smoothing(self.currently_displayed[fname])
 				self.add_graph(fname + "_sav", self.currently_displayed[fname][0], smoothed)
+			except:
+				print(e)
+
+	def spline_extrapolate(self):
+		if len(self.get_selected()) == 0:
+			self.open_popup("NOTICE: no file selected", True)
+		for fname in self.get_selected():
+			try:
+				mytck,myu=itp.splprep([self.currently_displayed[fname][0],self.currently_displayed[fname][1]],k=5, s=0)
+				xnew,ynew= itp.splev(np.linspace(0,1,3000),mytck)
+				self.add_graph(fname + "_splrep", xnew, ynew)
 			except:
 				print(e)
 
