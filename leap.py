@@ -21,16 +21,7 @@ ctk.set_appearance_mode("Dark")	# Modes: system (default), light, dark
 ctk.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
 plt.style.use("default")
 
-# When adding a product of an original graph it is possible to add multiples. Fix this.
-# View all variables such as probe area and gas type
 # when doing manipulations improve the name of the new file
-######" """""" AUTOFEATURES""""
-# Icon
-######### HELP MENU
-# add primitive, tkinter mode
-# store long decimals in terminal cut off to two places on gui
-# high density vs low density mode
-# add in data range to view instead of whole sweep.
 
 class App(ctk.CTk):
 	def __init__(self):
@@ -343,7 +334,6 @@ class App(ctk.CTk):
 		newfname = self.get_next_name(fname)
 		self.add_graph(newfname, self.currently_displayed[fname][0][xmin:xmax], self.currently_displayed[fname][1][xmin:xmax])
 		
-
 	def box_average(self):
 		for fname in self.get_selected():
 			try:

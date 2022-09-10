@@ -1,4 +1,4 @@
 windowsize:	7
 xyseparator:	\t
-datatype:	True
+datatype:	False	
 gastype:	40
