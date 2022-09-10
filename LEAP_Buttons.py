@@ -54,6 +54,7 @@ class LEAP_Buttons:
         	textvar = tkinter_frame.debye_ratio_calculate)
 
         tkinter_frame.basic_density_sef = sef.SmartEnterField(tkinter_frame.results_frame, "bdense", u" m\u207B\u00B3", tkinter_frame.basic_density)
+        tkinter_frame.probe_area_sef = sef.SmartEnterField(tkinter_frame.results_frame, "probe area", u" mm \u00B2", tkinter_frame.probe_area_update)
 
 
         """ ADDING FRAME """

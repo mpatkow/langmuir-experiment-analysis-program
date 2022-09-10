@@ -64,6 +64,7 @@ class Widget_Redrawer:
         self_of_parent.debye_ratio_button.grid(row = 0, column = 0)
         self_of_parent.debye_ratio_label.grid(row = 0, column = 1)
         self_of_parent.basic_density_sef.put_on_screen()
+        self_of_parent.probe_area_sef.put_on_screen()
 
         self_of_parent.scale_button.pack()
         self_of_parent.legend_button.pack()

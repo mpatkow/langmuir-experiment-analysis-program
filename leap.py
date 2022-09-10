@@ -17,11 +17,12 @@ import Options
 import Widget_Redrawer
 from scipy import interpolate as itp
 
-ctk.set_appearance_mode("Dark")  # Modes: system (default), light, dark
+ctk.set_appearance_mode("Dark")	# Modes: system (default), light, dark
 ctk.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
 plt.style.use("default")
 
 # When adding a product of an original graph it is possible to add multiples. Fix this.
+# View all variables such as probe area and gas type
 # when doing manipulations improve the name of the new file
 ######" """""" AUTOFEATURES""""
 # Icon
@@ -35,6 +36,9 @@ class App(ctk.CTk):
 	def __init__(self):
 		super().__init__()
 
+		option_file = open("options.txt", "r")
+		self.options = [l.split("\t")[1][:-1] for l in option_file.readlines()]
+		option_file.close()
 
 		# Optional starting directory
 		try:
@@ -49,54 +53,51 @@ class App(ctk.CTk):
 		self.geometry("%ix%i" % (self.WIDTH, self.HEIGHT))
 
 		self.data_analyzer = data_manipulator.data_manipulator()
-
-		option_file = open("options.txt", "r")
-		self.options = [l.split("\t")[1][:-1] for l in option_file.readlines()]
-		option_file.close()
-
 		self.WR = Widget_Redrawer.Widget_Redrawer()
 
-		self.currently_displayed = {}
-		self.selector_display = {}
-		self.graph_indexes = {"cursor1" : 0, "cursor2" : 1}
+		self.data_type_old			  = False
+		self.currently_displayed		= {}
+		self.selector_display		   = {}
+		self.graph_indexes			  = {"cursor1" : 0, "cursor2" : 1}
+		self.lin_log					= 0
+		self.next_index				 = 0
+		self.select_all				 = tk.IntVar()
+		self.legend_visibility		  = False
+		self.cursor_visibility		  = [tk.IntVar(value=0), tk.IntVar(value=0)]
+		self.fit_bound				  = [tk.IntVar(value=0), tk.IntVar(value=0)]
+		self.cursor_positions		   = []
+		self.temperature				= tk.StringVar(value = "---")
+		self.floating_potential		 = tk.DoubleVar()
+		self.debye_length			   = tk.DoubleVar()
+		self.density					= tk.DoubleVar()
+		self.probe_area				 = 0  
+		self.gas_type				   = float(self.options[3])/(10**3 * 6.023 * 10**23) # The atomic mass of the element is entered in options.txt
+		self.probe_radius			   = tk.DoubleVar()
+		self.debye_ratio				= tk.DoubleVar()
+		self.normal_vp				  = tk.DoubleVar()
+		self.bounds					 = [tk.IntVar(value=0),tk.IntVar(value=0),tk.IntVar(value=0),tk.IntVar(value=0)]
+		self.bounds1					= tk.StringVar(value = str(self.bounds[0].get()) + " to " + str(self.bounds[1].get()))
+		self.bounds2					= tk.StringVar(value = str(self.bounds[2].get()) + " to " + str(self.bounds[3].get()))
+		self.elementary_charge          = 1.60217663 * 10 ** (-19)
 
-		self.lin_log = 0
-		self.next_index = 0
-
-		if self.options[2] == "False":
-			self.data_type_old = False
-		else:
+		# The normal format this program reads for langmuir sweeps is	  xvalue xy_split yvalue newlinecharacter		   
+		# The old format is a continuous, one line list of x1,y1,x2,y2, ... 
+		# Other data formats might be added in the future
+		# The separator in the normal data format can be modified by changing the xy_split variable in the options file. This defaults to a tab (\t)
+		if self.options[2] == "True":
 			self.data_type_old = True
 		if self.options[1] == "\\t":
 			self.xy_split = "\t"
 		else:
 			self.xy_split = self.options[1]
-		self.select_all = tk.IntVar()
-		self.legend_visibility = False
-		self.cursor_visibility = [tk.IntVar(value=0), tk.IntVar(value=0)]
-		self.fit_bound = [tk.IntVar(value=0), tk.IntVar(value=0)]
-		self.cursor_positions = []
-		self.temperature = tk.StringVar(value = "---")
-		self.floating_potential = tk.DoubleVar()
-		self.debye_length = tk.DoubleVar()
-		self.density = tk.DoubleVar()
-		# TODO
-		self.probe_area = 0.738 *0.01 * 0.01
-		self.gas_type = 6.62*10**(-26)
-		self.probe_radius = tk.DoubleVar()
-		self.debye_ratio = tk.DoubleVar()
-		self.normal_vp = tk.DoubleVar()
-		self.bounds = [tk.IntVar(value=0),tk.IntVar(value=0),tk.IntVar(value=0),tk.IntVar(value=0)]
-		self.bounds1 = tk.StringVar(value = str(self.bounds[0].get()) + " to " + str(self.bounds[1].get()))
-		self.bounds2 = tk.StringVar(value = str(self.bounds[2].get()) + " to " + str(self.bounds[3].get()))
-
+		
 		LEAP_Frames.LEAP_Frames(self)
 		LEAP_Buttons.LEAP_Buttons(self)
 		self.redraw_widgets()
-
+		
 	def redraw_widgets(self):
-		self.WR.redraw_widgets(self)
-
+	   	self.WR.redraw_widgets(self)
+		
 	def check_selected_files(self):
 		opened_files = self.get_selected()
 		if len(opened_files) == 0:
@@ -164,12 +165,17 @@ class App(ctk.CTk):
 		self.bounds[2].set(cvalues[0])
 		self.bounds[3].set(cvalues[1])
 		self.bounds2.set(value = str(int(self.currently_displayed[fname][0][self.bounds[2].get()])) + " to " + str(int(self.currently_displayed[fname][0][self.bounds[3].get()])))
-
+			
 	def basic_density(self):
 		fname = self.get_selected()[0]
 		isat_value = abs(self.currently_displayed[fname][1][10])
-		ne = isat_value/(1.602*10**(-19) * self.probe_area * 2.7183 ** (-0.5)) * (self.gas_type/ (float(self.temperature.get().split(' ')[0]) * 1.602*10**(-19)) ) ** 0.5
+		ne = isat_value/(self.elementary_charge * self.probe_area * math.e ** (-0.5)) * (self.gas_type / (float(self.temperature.get().split(' ')[0]) * self.elementary_charge) ) ** 0.5
 		print(ne)
+
+
+	def probe_area_update(self):
+		self.probe_area = self.probe_area_sef.get_value()
+		print("Set the probe area to: %f square mm." % self.probe_area)
 
 	def absolute_v(self):
 		if self.check_selected_files() == 1:
@@ -398,7 +404,7 @@ class App(ctk.CTk):
 			try:
 				data = [self.currently_displayed[fname][0],np.log(self.currently_displayed[fname][1])]
 				#prelim_fname = fname.split("/")[-1].split(".")[0] + "_ln." + fname.split("/")[-1].split(".")[1]
-				prelim_fname = fname  + "average_ln"
+				prelim_fname = fname	+ "average_ln"
 				if prelim_fname not in list(self.graph_indexes.keys()):
 					self.add_graph(prelim_fname, data[0], data[1])
 			except KeyError:

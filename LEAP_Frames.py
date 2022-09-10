@@ -11,7 +11,7 @@ class LEAP_Frames:
             tkinter_frame.adding_frame = ctk.CTkFrame(master = tkinter_frame.left_frame)	# Holds the controls for adding and removing files from the graph.
 
 
-            tkinter_frame.control_frame = ctk.CTkFrame(master = tkinter_frame.right_frame)# Holds the controls for manipulating the graphs.
+            tkinter_frame.control_frame = ctk.CTkFrame(master = tkinter_frame.right_frame, border_width = 2)# Holds the controls for manipulating the graphs
             tkinter_frame.middle_frame = ctk.CTkFrame(master = tkinter_frame.right_frame)
             tkinter_frame.selector_frame = ctk.CTkFrame(master = tkinter_frame.middle_frame)
             tkinter_frame.select_all_frame = ctk.CTkFrame(master = tkinter_frame.selector_frame)
