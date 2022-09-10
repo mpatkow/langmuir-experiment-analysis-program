@@ -2,3 +2,4 @@ windowsize:	11
 xyseparator:	\t
 datatype:	False
 gastype:	40
+ecurr_view:	False

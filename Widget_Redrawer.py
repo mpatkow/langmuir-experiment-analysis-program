@@ -23,6 +23,7 @@ class Widget_Redrawer:
         self_of_parent.zoom_button.grid(row=0, column=3, sticky = "nsew")
         self_of_parent.pan_button.grid(row=0, column=4, sticky = "nsew")
         self_of_parent.save_image_button.grid(row=0, column=5, sticky = "nsew")
+        self_of_parent.trim_button.grid(row=0, column=6, sticky = "nsew")
 
         self_of_parent.right_frame.grid_columnconfigure(0, weight=1)
         self_of_parent.right_frame.grid_columnconfigure(1, weight=1)
