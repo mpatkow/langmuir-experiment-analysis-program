@@ -35,4 +35,4 @@ class SmartEnterField:
         self.unit_label.grid(row = 0, column = 4)
 
     def get_value(self):
-        return float(self.first_entry.get()) * 10 ** float(self.second_entry.get())
+      return float(self.first_entry.get()) * 10 ** float(self.second_entry.get())

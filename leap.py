@@ -64,7 +64,6 @@ class App(ctk.CTk):
 		self.probe_area				 = 0  
 		self.gas_type				   = float(self.options[3])/(10**3 * 6.023 * 10**23) # The atomic mass of the element is entered in options.txt
 		self.probe_radius			   = tk.DoubleVar()
-		self.debye_ratio				= tk.DoubleVar()
 		self.normal_vp				  = tk.DoubleVar()
 		self.bounds					 = [tk.IntVar(value=0),tk.IntVar(value=0),tk.IntVar(value=0),tk.IntVar(value=0)]
 		self.bounds1					= tk.StringVar(value = str(self.bounds[0].get()) + " to " + str(self.bounds[1].get()))
@@ -88,10 +87,12 @@ class App(ctk.CTk):
 		LEAP_Frames.LEAP_Frames(self)
 		LEAP_Buttons.LEAP_Buttons(self)
 		self.redraw_widgets()
-		
+	
+	#FIXED
 	def redraw_widgets(self):
 	   	self.WR.redraw_widgets(self)
-		
+	
+	#FIXED
 	def check_selected_files(self):
 		opened_files = self.get_selected()
 		if len(opened_files) == 0:
@@ -103,6 +104,7 @@ class App(ctk.CTk):
 		else:
 			return 1
 
+	#FIXED	
 	def hide_cursor(self, n):
 		if n == 1:
 			if self.cursor1.get_linestyle() == "None":
@@ -117,28 +119,31 @@ class App(ctk.CTk):
 
 		self.canvas.draw()
 
+	#FIXED
 	def get_cursor_values(self,fname, data_t):
 		data_t = self.currently_displayed[fname]
 		lower_abs = np.absolute(data_t[0] - self.fit_bound[0].get())
 		upper_abs = np.absolute(data_t[0] - self.fit_bound[1].get())
 		return sorted([np.where(upper_abs == np.min(upper_abs))[0][0],np.where(lower_abs == np.min(lower_abs))[0][0]])
 
-	# broken
-	def debye_ratio_calculate(self):
-		self.debye_ratio.set(self.probe_radius.get())/(self.debye_length.get())
-
+	#PRELIM FIX, NOT CHECKED	
 	def normal_potential(self):
-		a1 = self.bounds[0].get()
-		a2 = self.bounds[1].get()
-		b1 = self.bounds[2].get()
-		b2 = self.bounds[3].get()
+		if self.check_selected_files() == 1:
+			try:
+				a1 = self.bounds[0].get()
+				a2 = self.bounds[1].get()
+				b1 = self.bounds[2].get()
+				b2 = self.bounds[3].get()
+			except:
+				self.open_popup("NOTICE: plasma potential fit bounds not set properly", True)
 
-		fname = self.get_selected()[0]
-		data_t = self.currently_displayed[fname]
-		m1,intercept1 = np.polyfit(data_t[0][a1:a2], data_t[1][a1:a2], 1)
-		m2,intercept2 = np.polyfit(data_t[0][b1:b2], data_t[1][b1:b2], 1)
-		self.normal_vp.set((intercept2-intercept1)/(m1-m2))
+			fname = self.get_selected()[0]
+			data_t = self.currently_displayed[fname]
+			m1,intercept1 = np.polyfit(data_t[0][a1:a2], data_t[1][a1:a2], 1)
+			m2,intercept2 = np.polyfit(data_t[0][b1:b2], data_t[1][b1:b2], 1)
+			self.normal_vp.set((intercept2-intercept1)/(m1-m2))
 
+	#PRELIM FIX, NOT CHECKED
 	def square(self):
 		if self.check_selected_files() == 1:
 			fname = self.get_selected()[0]
@@ -163,17 +168,24 @@ class App(ctk.CTk):
 	def basic_density(self):
 		fname = self.get_selected()[0]
 		isat_value = abs(self.currently_displayed[fname][1][10])
-		print(self.elementary_charge)
-		print(self.probe_area)
-		print(math.e)
-		ne = isat_value/(self.elementary_charge * self.probe_area * math.e ** (-0.5)) * (self.gas_type / (float(self.temperature.get().split(' ')[0]) * self.elementary_charge) ) ** 0.5
+		ne = isat_value/(self.elementary_charge * self.probe_area) * (self.gas_type * 2 * math.pi / (float(self.temperature.get().split(' ')[0]) * self.elementary_charge) ) ** 0.5
 		print(ne)
+	
+		#fname = self.get_selected()[0]
+		#newfname = self.get_next_name(fname)
+		#data = self.data_analyzer.average(data_to_average)
+		#self.add_graph(newfname, data[0], data[1])
 
 
+	#FIXED
 	def probe_area_update(self):
-		self.probe_area = self.probe_area_sef.get_value()
-		print("Set the probe area to: %f square mm." % self.probe_area)
+		try:
+			self.probe_area = self.probe_area_sef.get_value()
+			print("Set the probe area to: %f square mm." % self.probe_area)
+		except:
+			self.open_popup("NOTICE: No value entered for probe area", True)
 
+	#PRELIM FIX, NOT CHECKED
 	def absolute_v(self):
 		if self.check_selected_files() == 1:
 			fname = self.get_selected()[0]
@@ -182,6 +194,7 @@ class App(ctk.CTk):
 			a = self.data_analyzer.absolute_val(self.currently_displayed[fname])[1]
 			self.add_graph(newfname, self.currently_displayed[fname][0], a)
 
+	#PRELIM FIX, NOT CHECKED
 	def save_data(self):
 		if self.check_selected_files() == 1:
 			fname = self.get_selected()[0]
@@ -199,7 +212,7 @@ class App(ctk.CTk):
 			f.write(data_to_write)
 			f.close()
 
-	# broken
+	#PRELIM FIX, NOT CHECKED
 	def save_image_data(self):
 		fname = asksaveasfilename(initialfile = "", defaultextension=".png", filetypes=[("Png Files","*.png"),("Jpg Files", "*.jpg"), ("All Files", "*.*")])
 		if fname is None:
@@ -360,6 +373,7 @@ class App(ctk.CTk):
 		data = self.data_analyzer.average(data_to_average)
 		self.add_graph(newfname, data[0], data[1])
 
+	#FIXED
 	def incr(self,n,cnum):
 		self.fit_bound[cnum-1].set(self.fit_bound[cnum-1].get()+n)
 		if cnum == 1:
@@ -368,6 +382,7 @@ class App(ctk.CTk):
 			self.cursor2.set_xdata(self.fit_bound[cnum-1].get())
 		self.canvas.draw()
 
+	#FIXED
 	def minu(self,n,cnum):
 		self.incr(-n, cnum)
 
@@ -534,7 +549,6 @@ class App(ctk.CTk):
 			i+=1
 
 		return prelim.split(".")[0].split("__")[0] + "__" + str(i) + "." + prelim.split(".")[-1]
-
 
 
 if __name__ == "__main__":

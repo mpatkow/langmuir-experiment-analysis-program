@@ -43,15 +43,6 @@ class LEAP_Buttons:
         	width = 30)
         tkinter_frame.debye_label = ctk.CTkLabel(master = tkinter_frame.debye_frame,
         	textvar = tkinter_frame.debye_length)
-        tkinter_frame.debye_ratio_frame = ctk.CTkFrame(master = tkinter_frame.results_frame)
-        tkinter_frame.debye_ratio_button = ctk.CTkButton(master = tkinter_frame.debye_ratio_frame,
-        	command = tkinter_frame.debye_ratio_calculate,
-        	text = "e(fix this_):",
-        	height = 30,
-        	width = 30,
-        	fg_color="red")
-        tkinter_frame.debye_ratio_label = ctk.CTkLabel(master = tkinter_frame.debye_ratio_frame,
-        	textvar = tkinter_frame.debye_ratio_calculate)
 
         tkinter_frame.basic_density_sef = sef.SmartEnterField(tkinter_frame.results_frame, "bdense", u" m\u207B\u00B3", tkinter_frame.basic_density)
         tkinter_frame.probe_area_sef = sef.SmartEnterField(tkinter_frame.results_frame, "probe area", u" mm \u00B2", tkinter_frame.probe_area_update)
