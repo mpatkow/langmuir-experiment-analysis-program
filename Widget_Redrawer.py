@@ -10,7 +10,7 @@ class Widget_Redrawer:
         self_of_parent.left_frame.grid(row=0, column = 0, sticky="nsew")
         self_of_parent.right_frame.grid(row=0, column = 1, sticky="nsew")
 
-        self_of_parent.left_frame.grid_rowconfigure(0, weight = 4)
+        self_of_parent.left_frame.grid_rowconfigure(0, weight = 7)
         self_of_parent.left_frame.grid_rowconfigure(1, weight = 1)
         self_of_parent.left_frame.grid_columnconfigure(0, weight = 1)
 

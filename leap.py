@@ -38,7 +38,7 @@ class App(ctk.CTk):
 			self.starting_dir = "~"
 
 		# Set up the basic window things
-		self.WIDTH = 1400
+		self.WIDTH = 5000
 		self.HEIGHT = 5000
 		self.title("Langmuir Experiment Analyzer Program")
 		self.geometry("%ix%i" % (self.WIDTH, self.HEIGHT))

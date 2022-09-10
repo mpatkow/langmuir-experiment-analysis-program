@@ -1,4 +1,5 @@
 import customtkinter as ctk
+import tkinter as tk
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,NavigationToolbar2Tk)
 
@@ -7,7 +8,7 @@ class LEAP_Frames:
             tkinter_frame.left_frame = ctk.CTkFrame()
             tkinter_frame.right_frame = ctk.CTkFrame()
 
-            tkinter_frame.graph_frame = ctk.CTkFrame(master = tkinter_frame.left_frame) 	# Holds the graph
+            tkinter_frame.graph_frame = ctk.CTkFrame(master = tkinter_frame.left_frame,fg_color="red") 	# Holds the graph
             tkinter_frame.adding_frame = ctk.CTkFrame(master = tkinter_frame.left_frame)	# Holds the controls for adding and removing files from the graph.
 
 
@@ -27,7 +28,7 @@ class LEAP_Frames:
             tkinter_frame.fig = Figure(figsize = (int(tkinter_frame.options[0]),int(tkinter_frame.options[0])), dpi = 100)
             tkinter_frame.plot1 = tkinter_frame.fig.add_subplot(111)
             tkinter_frame.canvas = FigureCanvasTkAgg(tkinter_frame.fig, master = tkinter_frame.graph_frame)
-            tkinter_frame.canvas.get_tk_widget().pack()
+            tkinter_frame.canvas.get_tk_widget().pack(fill=tk.BOTH,expand=True)
 
             tkinter_frame.toolbar = NavigationToolbar2Tk(tkinter_frame.canvas, tkinter_frame.useless_frame)
             tkinter_frame.toolbar.update()
