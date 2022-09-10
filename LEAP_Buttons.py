@@ -77,6 +77,9 @@ class LEAP_Buttons:
         tkinter_frame.pan_button = ctk.CTkButton(master = tkinter_frame.adding_frame,
         	command = tkinter_frame.fig.canvas.toolbar.pan,
         	text = "pan")
+        tkinter_frame.trim_button = ctk.CTkButton(master = tkinter_frame.adding_frame,
+        	command = tkinter_frame.trim,
+        	text = "trim")
 
 
 

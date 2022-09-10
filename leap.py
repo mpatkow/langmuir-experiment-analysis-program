@@ -169,6 +169,9 @@ class App(ctk.CTk):
 	def basic_density(self):
 		fname = self.get_selected()[0]
 		isat_value = abs(self.currently_displayed[fname][1][10])
+		print(self.elementary_charge)
+		print(self.probe_area)
+		print(math.e)
 		ne = isat_value/(self.elementary_charge * self.probe_area * math.e ** (-0.5)) * (self.gas_type / (float(self.temperature.get().split(' ')[0]) * self.elementary_charge) ) ** 0.5
 		print(ne)
 
@@ -332,6 +335,14 @@ class App(ctk.CTk):
 			if self.selector_display[key][0].winfo_children()[1].get() == 1:
 				selected.append(key)
 		return selected
+
+	def trim(self):
+		fname = self.get_selected()[0]
+		data_t = self.currently_displayed[fname]
+		[xmin, xmax] = self.get_cursor_values(fname, data_t)
+		newfname = self.get_next_name(fname)
+		self.add_graph(newfname, self.currently_displayed[fname][0][xmin:xmax], self.currently_displayed[fname][1][xmin:xmax])
+		
 
 	def box_average(self):
 		for fname in self.get_selected():
