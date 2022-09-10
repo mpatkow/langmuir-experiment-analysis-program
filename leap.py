@@ -70,6 +70,7 @@ class App(ctk.CTk):
 		self.bounds1					= tk.StringVar(value = str(self.bounds[0].get()) + " to " + str(self.bounds[1].get()))
 		self.bounds2					= tk.StringVar(value = str(self.bounds[2].get()) + " to " + str(self.bounds[3].get()))
 		self.elementary_charge          = 1.60217663 * 10 ** (-19)
+		self.ecurr_view					= False 
 
 		# The normal format this program reads for langmuir sweeps is	  xvalue xy_split yvalue newlinecharacter		   
 		# The old format is a continuous, one line list of x1,y1,x2,y2, ... 
@@ -77,6 +78,8 @@ class App(ctk.CTk):
 		# The separator in the normal data format can be modified by changing the xy_split variable in the options file. This defaults to a tab (\t)
 		if self.options[2] == "True":
 			self.data_type_old = True
+		if self.options[4] == "True":
+			self.ecurr_view = True
 		if self.options[1] == "\\t":
 			self.xy_split = "\t"
 		else:
@@ -249,7 +252,8 @@ class App(ctk.CTk):
 		fname = self.get_selected()[0]
 		[lower_abs, upper_abs] = self.get_cursor_values(fname, self.currently_displayed)
 		isat,electron_current = self.data_analyzer.ion_saturation_basic(self.currently_displayed[fname],lower_abs, upper_abs)
-		self.add_graph(fname + "_isat", self.currently_displayed[fname][0], isat)
+		if self.ecurr_view:
+			self.add_graph(fname + "_isat", self.currently_displayed[fname][0], isat)
 		self.add_graph(fname + "_ecurr", self.currently_displayed[fname][0], electron_current)
 
 	def basic_isat_auto(self):
