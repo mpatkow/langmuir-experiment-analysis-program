@@ -1,5 +1,4 @@
 import tkinter as tk
-import customtkinter as ctk
 
 class Widget_Redrawer:
     def redraw_widgets(self, self_of_parent):

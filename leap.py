@@ -1,5 +1,4 @@
 import tkinter as tk
-import customtkinter as ctk
 import os
 import matplotlib
 from matplotlib.figure import Figure
@@ -16,14 +15,26 @@ import LEAP_Buttons
 import Options
 import Widget_Redrawer
 from scipy import interpolate as itp
+mode = True
+try:
+	import customtkinter as ctk
+except:
+	print("Custom Tkinter not detected. Running in primitive mode. Run  pip install customtkinter  to install the package." )	
+	mode = False
 
-ctk.set_appearance_mode("Dark")	# Modes: system (default), light, dark
-ctk.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
+if mode:
+	ctk.set_appearance_mode("Dark")	# Modes: system (default), light, dark
+	ctk.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
 plt.style.use("default")
 
 # when doing manipulations improve the name of the new file
 
-class App(ctk.CTk):
+if mode == True:
+	type_of_screen = ctk.CTk
+else:
+	type_of_screen = tk.Tk
+
+class App(type_of_screen):
 	def __init__(self):
 		super().__init__()
 
