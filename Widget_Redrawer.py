@@ -80,6 +80,7 @@ class Widget_Redrawer:
         self_of_parent.natural_log_button.pack()
         self_of_parent.square_button.pack()
         self_of_parent.oml_button.pack()
+        self_of_parent.d_temp_button.pack()
 
         self_of_parent.normal_plasma_potential_method_frame.pack()
         self_of_parent.potential_bounds_1_button.grid(row=0,column=0)
