@@ -28,13 +28,6 @@ class LEAP_Buttons:
                     width = 30)
             tkinter_frame.floating_label = ctk.CTkLabel(master = tkinter_frame.floating_frame,
                     textvar = tkinter_frame.floating_potential)
-            tkinter_frame.probe_area_frame = ctk.CTkFrame(master = tkinter_frame.results_frame)
-            tkinter_frame.probe_area_input = ctk.CTkEntry(master = tkinter_frame.probe_area_frame,
-                    width = 120,
-                    height = 25,
-                    corner_radius = 10)
-            tkinter_frame.probe_area_label = ctk.CTkLabel(master = tkinter_frame.probe_area_frame,
-                    text = "Ap (cm^2)")
             tkinter_frame.ion_mass_frame = ctk.CTkFrame(master = tkinter_frame.results_frame)
             tkinter_frame.ion_mass_input = ctk.CTkEntry(master = tkinter_frame.ion_mass_frame,
                     width = 120,
@@ -114,6 +107,12 @@ class LEAP_Buttons:
                     text = "<<",
                     width = 5)
 
+
+            tkinter_frame.sorting_label_1 = ctk.CTkLabel(master = tkinter_frame.math_frame,text = "Smoothing:")
+            tkinter_frame.sorting_label_2 = ctk.CTkLabel(master = tkinter_frame.math_frame,text = "Math:")
+            tkinter_frame.sorting_label_3 = ctk.CTkLabel(master = tkinter_frame.math_frame,text = "Operations:")
+
+
             tkinter_frame.rescale_button = ctk.CTkButton(master = tkinter_frame.options_frame,
                     command = tkinter_frame.rescale,
                     text = "Rescale")
@@ -138,7 +137,7 @@ class LEAP_Buttons:
                     text = "average")
             tkinter_frame.square_button = ctk.CTkButton(master = tkinter_frame.math_frame,
                     command = tkinter_frame.square,
-                    text = "f^2")
+                    text = u"f\u00B2")
             tkinter_frame.basic_isat_button = ctk.CTkButton(master = tkinter_frame.math_frame,
                     command = tkinter_frame.basic_isat,
                     text = "basic isat")
@@ -153,8 +152,7 @@ class LEAP_Buttons:
                     text = "Spline")
             tkinter_frame.eedf_button = ctk.CTkButton(master = tkinter_frame.math_frame,
                     command = tkinter_frame.eedf,
-                    text = "EEDF",
-                    fg_color="red")
+                    text = "EEDF")
             tkinter_frame.plasma_potential_button = ctk.CTkButton(master= tkinter_frame.math_frame,
                     command = tkinter_frame.plasma_potential,
                     text = "plasma potential")
@@ -163,7 +161,7 @@ class LEAP_Buttons:
                     text = "|f|")
             tkinter_frame.natural_log_button = ctk.CTkButton(master = tkinter_frame.math_frame,
                     command = tkinter_frame.natural,
-                    text = "ln")
+                    text = "ln f")
             tkinter_frame.oml_button = ctk.CTkButton(master = tkinter_frame.math_frame,
                     command = tkinter_frame.oml,
                     text = "oml")
@@ -327,7 +325,7 @@ class LEAP_Buttons:
                     text = "average")
             tkinter_frame.square_button = tk.Button(master = tkinter_frame.math_frame,
                     command = tkinter_frame.square,
-                    text = "f^2")
+                    text = u"f\u00B2")
             tkinter_frame.basic_isat_button = tk.Button(master = tkinter_frame.math_frame,
                     command = tkinter_frame.basic_isat,
                     text = "basic isat")
