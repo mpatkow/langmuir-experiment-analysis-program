@@ -66,8 +66,8 @@ class data_manipulator:
         m,b = np.polyfit(data[0][isat_guess_lower:isat_guess_upper], data[1][isat_guess_lower:isat_guess_upper], 1)
         return m*data[0] + b, data[1] - m*data[0] -b
 
-    def savgol_smoothing(self, data):
-        return savgol_filter(data[1],51,3)
+    def savgol_smoothing(self, data, o1, o2):
+        return savgol_filter(data[1],o1,o2)
 
     def druyvesteyn(self, data, vp, probe_area):
         # returns eedf

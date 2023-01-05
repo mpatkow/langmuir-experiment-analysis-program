@@ -27,7 +27,7 @@ class SmartEnterField:
 				height = 25,
 				corner_radius = 10)
 			self.unit_label = ctk.CTkLabel(master = self.enter_field_frame,
-			    textvar = tk.StringVar(value = unit),
+			    textvariable = tk.StringVar(value = unit),
 			    width = label_width)
 		else:
 			self.variable = tk.DoubleVar(value = 0)
@@ -45,7 +45,7 @@ class SmartEnterField:
 			self.second_entry = tk.Entry(master = self.enter_field_frame,
 				width = 50)
 			self.unit_label = tk.Label(master = self.enter_field_frame,
-			    textvar = tk.StringVar(value = unit),
+			    textvariable = tk.StringVar(value = unit),
 			    width = label_width)
 
 	def put_on_screen(self):

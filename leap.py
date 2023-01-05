@@ -1,4 +1,5 @@
 import tkinter as tk
+import time
 import os
 import matplotlib
 from matplotlib.figure import Figure
@@ -49,8 +50,8 @@ class App(type_of_screen):
             self.starting_dir = "~"
 
         # Set up the basic window things
-        self.WIDTH = 5000
-        self.HEIGHT = 5000
+        self.WIDTH = 1200 
+        self.HEIGHT = 500 
         self.title("Langmuir Experiment Analyzer Program")
         self.geometry("%ix%i" % (self.WIDTH, self.HEIGHT))
 
@@ -81,6 +82,7 @@ class App(type_of_screen):
         self.bounds2					= tk.StringVar(value = str(self.bounds[2].get()) + " to " + str(self.bounds[3].get()))
         self.elementary_charge          = 1.60217663 * 10 ** (-19)
         self.ecurr_view					= False 
+        self.console_input_var              = tk.StringVar()
 
         # The normal format this program reads for langmuir sweeps is	  xvalue xy_split yvalue newlinecharacter		   
         # The old format is a continuous, one line list of x1,y1,x2,y2, ... 
@@ -154,6 +156,60 @@ class App(type_of_screen):
             m2,intercept2 = np.polyfit(data_t[0][b1:b2], data_t[1][b1:b2], 1)
             self.normal_vp.set((intercept2-intercept1)/(m1-m2))
 
+    def hide_graph(self):
+        for a in self.get_selected():
+            fname = a 
+            if self.plot1.get_lines()[self.graph_indexes[fname]].get_marker() != None:
+                self.plot1.get_lines()[self.graph_indexes[fname]].set_marker(None)
+                self.canvas.draw()
+            else:
+                self.plot1.get_lines()[self.graph_indexes[fname]].set_marker("o")
+                self.canvas.draw()
+
+    def console_input_receive(self):
+        self.console.configure(state="normal")
+        self.console_command(self.console_input_var.get())
+        self.console.insert(tk.END, self.console_input_var.get() + "\n")
+        self.console_input_var.set("")
+        self.console.yview(tk.END)
+        self.console.configure(state="disabled")
+
+    # make this a separate class or file
+    def console_command(self, ctxt):
+        if ctxt[0] != ":":
+            return None
+        ctxt = ctxt[1:]
+        cmd = ctxt.split(" ")[0]
+        if cmd == "explorer":
+            self.file_browser()
+        if cmd == "savgol":
+            winlen = 51
+            porder = 3 
+            if "-winlen" in ctxt:
+                winlen = int(ctxt.split("-winlen ")[1].split(" ")[0])
+                if winlen % 2 == 0:
+                    winlen += 1
+            if "-polyorder" in ctxt:
+                porder = int(ctxt.split("-polyorder ")[1].split(" ")[0])
+            self.savgol(o1 = winlen, o2 = porder)
+        if cmd == "boxav":
+            self.box_average()
+        if cmd == "spline":
+            self.spline_extrapolate()
+        if cmd == "average":
+            self.average()
+    
+    def emphasize(self):
+        if self.check_selected_files() == 1:
+            fname = self.get_selected()[0]
+            og = self.plot1.get_lines()[self.graph_indexes[fname]].get_markersize()
+            self.plot1.get_lines()[self.graph_indexes[fname]].set_markersize(og*2)
+            self.canvas.draw()
+            time.sleep(2)
+            self.plot1.get_lines()[self.graph_indexes[fname]].set_markersize(og*1)
+            self.canvas.draw()
+
+            
     #PRELIM FIX, NOT CHECKED
     def square(self):
         if self.check_selected_files() == 1:
@@ -249,17 +305,6 @@ class App(type_of_screen):
         eexvals, ee = self.data_analyzer.druyvesteyn(self.currently_displayed[fname],vp, 4.17 * 10**(-6))
         self.add_graph(fname + "_ee", eexvals, ee)
 
-    #TEMPORARILIY DOING SPLREP/SPLEV
-    def savgol(self):
-        if len(self.get_selected()) == 0:
-            self.open_popup("NOTICE: no file selected", True)
-        for fname in self.get_selected():
-            try:
-                smoothed = self.data_analyzer.savgol_smoothing(self.currently_displayed[fname])
-                self.add_graph(fname + "_sav", self.currently_displayed[fname][0], smoothed)
-            except:
-                print(e)
-
     def druyvesteyn_temperature(self):
         fname = self.get_selected()[0]
         data = self.currently_displayed[fname]
@@ -273,9 +318,25 @@ class App(type_of_screen):
             try:
                 mytck,myu=itp.splprep([self.currently_displayed[fname][0],self.currently_displayed[fname][1]],k=5, s=0)
                 xnew,ynew= itp.splev(np.linspace(0,1,3000),mytck)
-                self.add_graph(fname + "_splrep", xnew, ynew)
+                newfname = self.get_next_name(fname)
+                if newfname not in list(self.graph_indexes.keys()):
+                    self.add_graph(newfname, xnew, ynew)
             except:
                 print(e)
+
+    def zoomfunc(self):
+        self.fig.canvas.toolbar.zoom()
+        self.console.configure(state="normal")
+        self.console.tag_config('info', background="blue", foreground="black")
+        self.console.insert(tk.END, "Graph set to zoom mode\n",'info')
+        self.console.configure(state="disabled")
+
+    def panfunc(self):
+        self.fig.canvas.toolbar.pan()
+        self.console.configure(state="normal")
+        self.console.tag_config('info', background="blue", foreground="black")
+        self.console.insert(tk.END, "Graph set to pan mode\n",'info')
+        self.console.configure(state="disabled")
 
     # Get rid of the try except
     def basic_isat(self):
@@ -368,7 +429,16 @@ class App(type_of_screen):
         newfname = self.get_next_name(fname)
         self.add_graph(newfname, self.currently_displayed[fname][0][xmin:xmax], self.currently_displayed[fname][1][xmin:xmax])
 
+    def dropdown_test_function(self,arg):
+        if arg == "zoom":
+            self.fig.canvas.toolbar.zoom()
+        elif arg == "pan":
+            print("PAN!")
+            self.fig.canvas.toolbar.pan()
+
     def box_average(self):
+        if len(self.get_selected()) == 0:
+            self.open_popup("NOTICE: no file selected", True)
         for fname in self.get_selected():
             try:
                 data = self.data_analyzer.box_average(self.currently_displayed[fname])
@@ -379,16 +449,31 @@ class App(type_of_screen):
             except KeyError:
                 print("\a")
 
+    def savgol(self, o1 = 51, o2=3):
+        if len(self.get_selected()) == 0:
+            self.open_popup("NOTICE: no file selected", True)
+        for fname in self.get_selected():
+            try:
+                smoothed = self.data_analyzer.savgol_smoothing(self.currently_displayed[fname],o1,o2)
+                newfname = self.get_next_name(fname)
+                if newfname not in list(self.graph_indexes.keys()):
+                    self.add_graph(newfname, self.currently_displayed[fname][0], smoothed)
+            except:
+                print(e)
+
     # BETTER NAMES
     def average(self):
+        if len(self.get_selected()) == 0:
+            self.open_popup("NOTICE: no file selected", True)
         data_to_average = []
         for fname in self.get_selected():
             data_to_average.append(self.currently_displayed[fname])
-        # TODO broken
+
         fname = self.get_selected()[0]
         newfname = self.get_next_name(fname)
         data = self.data_analyzer.average(data_to_average)
-        self.add_graph(newfname, data[0], data[1])
+        if newfname not in list(self.graph_indexes.keys()):
+            self.add_graph(newfname, data[0], data[1])
 
     #FIXED
     def incr(self,n,cnum):
@@ -453,15 +538,14 @@ class App(type_of_screen):
                 print("\a")
 
     def open_popup(self,message,warn):
-        top = ctk.CTkToplevel(self)
+        self.console.configure(state="normal")
         if warn:
-            top.geometry("1000x100")
-            top.title("Warning!")
-            tk.Label(top, textvariable = tk.StringVar(value = message),fg="yellow",font = ("courier",50),bg = "#2a2d2e").pack()
+            self.console.tag_config('warning', background="yellow", foreground="black")
+            self.console.insert(tk.END, message + "\n",'warning')
         else:
-            top.geometry("1000x100")
-            top.title("Error!")
-            tk.Label(top, textvariable = tk.StringVar(value = message),fg="red",font = ("courier",50),bg = "#2a2d2e").pack()
+            self.console.tag_config('error', background="red", foreground="black")
+            self.console.insert(tk.END, message + "\n",'error')
+        self.console.configure(state="disabled")
 
     def file_browser(self):
         fnames = tk.filedialog.askopenfilenames(initialdir = self.starting_dir, title = "Select a File", filetypes = [("csv files", "*.csv"),("data files", "*.txt"),  ("all files","*.*")])
@@ -516,14 +600,19 @@ class App(type_of_screen):
         file_frame = ctk.CTkFrame(master = self.selector_frame)
 
         cb_value = tk.IntVar()
-        label = ctk.CTkLabel(master = file_frame, text = f.split("/")[-1])
+        #label = ctk.CTkLabel(master = file_frame, text = f.split("/")[-1])
+        if self.next_index == 0:
+            label = ctk.CTkLabel(master = file_frame, text = "file 1")
+        else: 
+            label = ctk.CTkLabel(master = file_frame, text = "file " + str(self.next_index))
         cb = ctk.CTkCheckBox(master = file_frame, text = "",variable = cb_value)
+
+        lineee = self.plot(x,y)
 
         self.selector_display.update({f: [file_frame,cb_value]})
         self.update_next_index()
         self.graph_indexes.update({f: self.next_index})
 
-        self.plot(x,y)
         file_frame.pack()
         label.grid(row=0, column=0)
         cb.grid(row=0, column=1)
