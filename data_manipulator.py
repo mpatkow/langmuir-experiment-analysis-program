@@ -31,7 +31,9 @@ class data_manipulator:
         for i in range(1, len(data[1])-1):
             new_y.append((data[1][i-1] + data[1][i] + data[1][i+1])/3)
         new_y = np.array(new_y)
-        return [data[0][1:-1], new_y]
+        new_y = np.insert(new_y, 0, data[1][0], axis=0)
+        new_y = np.append(new_y, data[1][-1])
+        return [data[0], new_y]
 
     # Finds the floating potential by finding the largest negative value and smallest positive value and doing a linear fit between them to get the x-intercept.
     def floating_potential(self, data):
@@ -76,7 +78,7 @@ class data_manipulator:
         new_current_data = np.flip(data[1][0:max_index])
         electron_energy = np.flip(vp - trimmed_probe_biases)
         first_der = self.derivative([trimmed_probe_biases, new_current_data],1)
-        first_der_smoothed = self.savgol_smoothing(first_der)
+        first_der_smoothed = self.savgol_smoothing(first_der,51,3)
         second_der = self.derivative([trimmed_probe_biases, first_der_smoothed],1)
         return electron_energy, np.multiply(second_der[1], np.sqrt(electron_energy)) * (9.1093837 * 10**(-31)) ** (0.5) * 2 * math.sqrt(2) / ((1.60217663 * 10**(-19)) **2 * probe_area)
 
@@ -109,11 +111,11 @@ class data_manipulator:
         return density/(10**6)
 
     def ion_saturation_basic_auto(self, data, tolerance = 0.01):
-        first_smooth = [data[0],self.savgol_smoothing(data)]
+        first_smooth = [data[0],self.savgol_smoothing(data,51,3)]
         first_der = self.derivative(first_smooth, 1)
-        first_der_smooth = [data[0],self.savgol_smoothing(first_der)]
+        first_der_smooth = [data[0],self.savgol_smoothing(first_der,51,3)]
         second_der = self.derivative(first_der_smooth, 1)
-        second_der_smooth = [data[0],self.savgol_smoothing(second_der)]
+        second_der_smooth = [data[0],self.savgol_smoothing(second_der,51,3)]
         second_der_smooth = [data[0], np.absolute(data[1])]
 
         max_second_der_smooth = np.max(second_der_smooth[1])

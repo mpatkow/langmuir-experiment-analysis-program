@@ -56,7 +56,6 @@ class App(type_of_screen):
         self.data_analyzer = data_manipulator.data_manipulator()
         self.WR = Widget_Redrawer.Widget_Redrawer()
 
-        
         self.data_type_old			  = False
         self.currently_displayed		= {}
         self.selector_display		   = {}
@@ -200,11 +199,25 @@ class App(type_of_screen):
 
     def add_commands(self):
         self.valid_commands["explorer"] = ["file_browser",[],[]]
-        self.valid_commands["savgol"] = ["savgol",["winlen", "polyorder"],[51,3]]
+        self.valid_commands["savgol"] = ["savgol",["winlen", "polyorder"],[53,3]]
         self.valid_commands["boxav"] = ["box_average",[],[]]
-        self.valid_commands["spline"] = ["spline_extrapolate",[],[]]
+        self.valid_commands["spline"] = ["spline_extrapolate",["p"],[1000]]
         self.valid_commands["average"] = ["average",[],[]]
         self.valid_commands["repair_options"] = ["fix_options",[],[]]
+        self.valid_commands["delete"] = ["delete_file",[],[]]
+        self.valid_commands["zoom"] = ["zoomfunc",[],[]]
+        self.valid_commands["pan"] = ["panfunc",[],[]]
+        self.valid_commands["save"] = ["save_data",[],[]]
+        self.valid_commands["saveimage"] = ["save_image_data",[],[]]
+        self.valid_commands["settings"] = ["open_help_and_options",[],[]]
+        self.valid_commands["derivative"] = ["derivative",["o"],[1]]
+        self.valid_commands["power"] = ["raiseto",["o"],[2]]
+        self.valid_commands["abs"] = ["absolute_v",[],[]]
+        self.valid_commands["rescale"] = ["rescale",[],[]]
+        self.valid_commands["isat"] = ["basic_isat",[],[]]
+        self.valid_commands["ln"] = ["natural",[],[]]
+        self.valid_commands["trim"] = ["trim",[],[]]
+        self.valid_commands["hide"] = ["hide_graph",[],[]]
 
     def get_option_values(self, command): 
         # needs ERROR messages
@@ -237,23 +250,11 @@ class App(type_of_screen):
 
             eval(cmd)
     
-    def emphasize(self):
-        if self.check_selected_files() == 1:
-            fname = self.get_selected()[0]
-            og = self.plot1.get_lines()[self.graph_indexes[fname]].get_markersize()
-            self.plot1.get_lines()[self.graph_indexes[fname]].set_markersize(og*2)
-            self.canvas.draw()
-            time.sleep(2)
-            self.plot1.get_lines()[self.graph_indexes[fname]].set_markersize(og*1)
-            self.canvas.draw()
-
-            
-    #PRELIM FIX, NOT CHECKED
-    def square(self):
+    def raiseto(self,p=2):
         if self.check_selected_files() == 1:
             fname = self.get_selected()[0]
             newfname = self.get_next_name(fname)
-            sq = np.square(self.currently_displayed[fname][1])
+            sq = self.currently_displayed[fname][1] ** p
             self.add_graph(newfname, self.currently_displayed[fname][0], sq)
 
     def save_bounds_1(self):
@@ -307,16 +308,25 @@ class App(type_of_screen):
             data = self.currently_displayed[fname]
             data_to_write = ""
             for i in range(len(data[0])):
-                data_to_write += str(data[0][i])
-                data_to_write += self.xy_split
-                data_to_write += str(data[1][i])
-                data_to_write += "\n"
+                if self.data_type_old == False:
+                    data_to_write += str(data[0][i])
+                    data_to_write += self.xy_split
+                    data_to_write += str(data[1][i])
+                    data_to_write += "\n"
+                else:
+                    data_to_write += str(data[0][i])
+                    data_to_write += "," 
+                    data_to_write += str(data[1][i])
+                    data_to_write += ","
 
             data_to_write = data_to_write[:-1]
             name_to_write_to = asksaveasfilename(initialfile = "", defaultextension=".txt", filetypes=[("Text Files","*.txt"),("Csv Files", "*.csv"), ("All Files", "*.*")])
-            f = open(name_to_write_to, "w")
-            f.write(data_to_write)
-            f.close()
+            try:
+                f = open(name_to_write_to, "w")
+                f.write(data_to_write)
+                f.close()
+            except FileNotFoundError:
+                pass
 
     #PRELIM FIX, NOT CHECKED
     def save_image_data(self):
@@ -349,13 +359,13 @@ class App(type_of_screen):
         [temp_fit_lower, temp_fit_upper] = self.get_cursor_values(fname, self.currently_displayed)
         print(self.data_analyzer.druyvesteyn_temperature(data, temp_fit_lower, temp_fit_upper))
 
-    def spline_extrapolate(self):
+    def spline_extrapolate(self,points=1000):
         if len(self.get_selected()) == 0:
             self.open_popup("no file selected", "yellow", "NOTICE") 
         for fname in self.get_selected():
             try:
                 mytck,myu=itp.splprep([self.currently_displayed[fname][0],self.currently_displayed[fname][1]],k=5, s=0)
-                xnew,ynew= itp.splev(np.linspace(0,1,3000),mytck)
+                xnew,ynew= itp.splev(np.linspace(0,1,points),mytck)
                 newfname = self.get_next_name(fname)
                 if newfname not in list(self.graph_indexes.keys()):
                     self.add_graph(newfname, xnew, ynew)
@@ -378,14 +388,17 @@ class App(type_of_screen):
         self.console.see("end")
         self.console.configure(state="disabled")
 
-    # Get rid of the try except
     def basic_isat(self):
-        fname = self.get_selected()[0]
-        [lower_abs, upper_abs] = self.get_cursor_values(fname, self.currently_displayed)
-        isat,electron_current = self.data_analyzer.ion_saturation_basic(self.currently_displayed[fname],lower_abs, upper_abs)
-        if self.ecurr_view:
-            self.add_graph(fname + "_isat", self.currently_displayed[fname][0], isat)
-        self.add_graph(fname + "_ecurr", self.currently_displayed[fname][0], electron_current)
+        if len(self.get_selected()) == 0:
+            fname = self.get_selected()[0]
+        for fname in self.get_selected():
+            [lower_abs, upper_abs] = self.get_cursor_values(fname, self.currently_displayed)
+            isat,electron_current = self.data_analyzer.ion_saturation_basic(self.currently_displayed[fname],lower_abs, upper_abs)
+            if self.ecurr_view:
+                newfname = self.get_next_name(fname)
+                self.add_graph(newfname, self.currently_displayed[fname][0], isat)
+            newfname = self.get_next_name(fname)
+            self.add_graph(newfname + "_ecurr", self.currently_displayed[fname][0], electron_current)
 
     def basic_isat_auto(self):
         fname = self.get_selected()[0]
@@ -445,15 +458,18 @@ class App(type_of_screen):
 
         xs = [xss for xss in xs if str(xss) != 'nan']
         ys = [yss for yss in ys if str(yss) != 'nan']
+        
+        try:
+            minxs = float(min(xs))
+            minys = float(min(ys))
+            maxxs = float(max(xs))
+            maxys = float(max(ys))
 
-        minxs = float(min(xs))
-        minys = float(min(ys))
-        maxxs = float(max(xs))
-        maxys = float(max(ys))
-
-        self.plot1.set_xlim(minxs,maxxs)
-        self.plot1.set_ylim(minys,maxys)
-        self.canvas.draw()
+            self.plot1.set_xlim(minxs,maxxs)
+            self.plot1.set_ylim(minys,maxys)
+            self.canvas.draw()
+        except:
+            pass
 
     def get_selected(self):
         selected = []
@@ -463,11 +479,14 @@ class App(type_of_screen):
         return selected
 
     def trim(self):
-        fname = self.get_selected()[0]
-        data_t = self.currently_displayed[fname]
-        [xmin, xmax] = self.get_cursor_values(fname, data_t)
-        newfname = self.get_next_name(fname)
-        self.add_graph(newfname, self.currently_displayed[fname][0][xmin:xmax], self.currently_displayed[fname][1][xmin:xmax])
+        if len(self.get_selected()) == 0:
+            self.open_popup("no file selected", "yellow", "NOTICE")
+        else:
+            fname = self.get_selected()[0]
+            data_t = self.currently_displayed[fname]
+            [xmin, xmax] = self.get_cursor_values(fname, data_t)
+            newfname = self.get_next_name(fname)
+            self.add_graph(newfname, self.currently_displayed[fname][0][xmin:xmax], self.currently_displayed[fname][1][xmin:xmax])
 
     def dropdown_test_function(self,arg):
         if arg == "zoom":
@@ -481,14 +500,12 @@ class App(type_of_screen):
         for fname in self.get_selected():
             try:
                 data = self.data_analyzer.box_average(self.currently_displayed[fname])
-                prelim_fname = fname.split("/")[-1].split(".")[0] + "_box." + fname.split("/")[-1].split(".")[1]
-                if prelim_fname not in list(self.graph_indexes.keys()):
-                    self.add_graph(prelim_fname, data[0], data[1])
-
+                newfname = self.get_next_name(fname)
+                self.add_graph(newfname, data[0], data[1])
             except KeyError:
                 print("\a")
 
-    def savgol(self, o1, o2):
+    def savgol(self, o1=53, o2=3):
         if o1 % 2 == 0:
             o1 += 1
         if len(self.get_selected()) == 0:
@@ -502,19 +519,23 @@ class App(type_of_screen):
             except:
                 print(e)
 
-    # BETTER NAMES
+    # make different sized files be comaptible with average
     def average(self):
         if len(self.get_selected()) == 0:
             self.open_popup("no file selected", "yellow", "NOTICE")
-        data_to_average = []
-        for fname in self.get_selected():
-            data_to_average.append(self.currently_displayed[fname])
+        else:
+            data_to_average = []
+            for fname in self.get_selected():
+                data_to_average.append(self.currently_displayed[fname])
 
-        fname = self.get_selected()[0]
-        newfname = self.get_next_name(fname)
-        data = self.data_analyzer.average(data_to_average)
-        if newfname not in list(self.graph_indexes.keys()):
-            self.add_graph(newfname, data[0], data[1])
+            fname = self.get_selected()[0]
+            newfname = self.get_next_name(fname)
+            try:
+                data = self.data_analyzer.average(data_to_average)
+                if newfname not in list(self.graph_indexes.keys()):
+                    self.add_graph(newfname, data[0], data[1])
+            except:
+                self.open_popup("files not same size", "yellow", "NOTICE")
 
     #FIXED
     def incr(self,n,cnum):
@@ -529,41 +550,45 @@ class App(type_of_screen):
     def minu(self,n,cnum):
         self.incr(-n, cnum)
 
-    #cursor order not fixed yet
     def temp_fit(self):
-        fname = self.get_selected()[0]
-        data_t = self.currently_displayed[fname]
-        [temp_fit_lower, temp_fit_upper] = self.get_cursor_values(fname, self.currently_displayed)
-        temps = []
-        for upper_bound in range(temp_fit_lower, temp_fit_upper+1):
-            for lower_bound in range(temp_fit_lower, upper_bound):
-                if abs(lower_bound-upper_bound) == 1:
-                    pass
-                else:
-                    if (temp_fit_lower - temp_fit_upper) > 10:
-                        if upper_bound % 5 == 0 and lower_bound % 5 == 0:
+        if len(self.get_selected()) == 0:
+            self.open_popup("no file selected", "yellow", "NOTICE")
+        else:
+            fname = self.get_selected()[0]
+            data_t = self.currently_displayed[fname]
+            [temp_fit_lower, temp_fit_upper] = self.get_cursor_values(fname, self.currently_displayed)
+            temps = []
+            for upper_bound in range(temp_fit_lower, temp_fit_upper+1):
+                for lower_bound in range(temp_fit_lower, upper_bound):
+                    if abs(lower_bound-upper_bound) == 1:
+                        pass
+                    else:
+                        if (temp_fit_lower - temp_fit_upper) > 10:
+                            if upper_bound % 5 == 0 and lower_bound % 5 == 0:
+                                m,b = np.polyfit(data_t[0][lower_bound:upper_bound], data_t[1][lower_bound:upper_bound], 1)
+                                temps.append(1/m)
+                        else:
                             m,b = np.polyfit(data_t[0][lower_bound:upper_bound], data_t[1][lower_bound:upper_bound], 1)
                             temps.append(1/m)
-                    else:
-                        m,b = np.polyfit(data_t[0][lower_bound:upper_bound], data_t[1][lower_bound:upper_bound], 1)
-                        temps.append(1/m)
 
-        temps = np.array(temps)
-        av = np.average(temps)
-        std = np.std(temps)
+            temps = np.array(temps)
+            av = np.average(temps)
+            std = np.std(temps)
 
-        self.temperature.set(str(av) + " +- " + str(std))
+            self.temperature.set(str(av) + " +- " + str(std))
 
-        print("Temp: ", av)
-        print("Bounds: %f to %f" % (av - std, av + std) )
+            final_temp_statement = u"Temperature: %f \u00b1 %f" % (av, std)
 
-    def derivative(self):
+            self.open_popup(final_temp_statement, "", "RESULT")
+
+    def derivative(self,order=1):
         for fname in self.get_selected():
             try:
-                data = self.data_analyzer.derivative(self.currently_displayed[fname],1)
-                prelim_fname = fname.split("/")[-1].split(".")[0] + "_der." + fname.split("/")[-1].split(".")[1]
-                if prelim_fname not in list(self.graph_indexes.keys()):
-                    self.add_graph(prelim_fname, data[0], data[1])
+                data = self.data_analyzer.derivative(self.currently_displayed[fname],order)
+                fname = self.get_selected()[0]
+                newfname = self.get_next_name(fname)
+                sq = np.square(self.currently_displayed[fname][1])
+                self.add_graph(newfname, data[0], data[1])
             except KeyError:
                 print("\a")
 
@@ -571,10 +596,9 @@ class App(type_of_screen):
         for fname in self.get_selected():
             try:
                 data = [self.currently_displayed[fname][0],np.log(self.currently_displayed[fname][1])]
-                #prelim_fname = fname.split("/")[-1].split(".")[0] + "_ln." + fname.split("/")[-1].split(".")[1]
-                prelim_fname = fname	+ "average_ln"
-                if prelim_fname not in list(self.graph_indexes.keys()):
-                    self.add_graph(prelim_fname, data[0], data[1])
+                newfname = self.get_next_name(fname)
+                sq = np.square(self.currently_displayed[fname][1])
+                self.add_graph(newfname, data[0], data[1])
             except KeyError:
                 print("\a")
 
@@ -584,6 +608,8 @@ class App(type_of_screen):
             self.console.insert(tk.END, "[" + name.upper() + "] " + message + "\n", "redtag")
         if color == "yellow":
             self.console.insert(tk.END, "[" + name.upper() + "] " + message + "\n", "yellowtag")
+        if color == "":
+            self.console.insert(tk.END, "[" + name.upper() + "] " + message + "\n")
         self.console.see("end")
         self.console.configure(state="disabled")
 

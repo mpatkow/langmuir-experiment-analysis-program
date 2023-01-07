@@ -12,11 +12,9 @@ class LEAP_Buttons:
         if mode == True:
             """ RESULTS FRAMES """
 
-            tkinter_frame.temperature_button = ctk.CTkButton(master = tkinter_frame.temperature_frame,
+            tkinter_frame.temperature_button = ctk.CTkButton(master = tkinter_frame.b3_frame,
                     command = tkinter_frame.temp_fit,
-                    text = u"kT\u2091",
-                    height = 30,
-                    width = 30)
+                    text = u"kT\u2091")
             tkinter_frame.temperature_label = ctk.CTkLabel(master = tkinter_frame.temperature_frame,
                     textvariable = tkinter_frame.temperature)
 
@@ -74,6 +72,7 @@ class LEAP_Buttons:
                     command = tkinter_frame.dropdown_test_function)
 
 
+            tkinter_frame.cursor_label = ctk.CTkLabel(master = tkinter_frame.cursor_frame, text = "Cursors:")
             tkinter_frame.plus_button = ctk.CTkButton(master = tkinter_frame.cursor_frame,
                     command = lambda: tkinter_frame.incr(1,1),
                     text = ">",
@@ -116,7 +115,7 @@ class LEAP_Buttons:
 
             tkinter_frame.rescale_button = ctk.CTkButton(master = tkinter_frame.adding_frame,
                     command = tkinter_frame.rescale,
-                    text = "Rescale")
+                    text = "rescale")
             tkinter_frame.derivative_button = ctk.CTkButton(master = tkinter_frame.b2_frame,
                     command = tkinter_frame.derivative,
                     text = "f'")
@@ -137,7 +136,7 @@ class LEAP_Buttons:
                     command = tkinter_frame.average,
                     text = "average")
             tkinter_frame.square_button = ctk.CTkButton(master = tkinter_frame.b2_frame,
-                    command = tkinter_frame.square,
+                    command = tkinter_frame.raiseto,
                     text = u"f\u00B2")
             tkinter_frame.basic_isat_button = ctk.CTkButton(master = tkinter_frame.b3_frame,
                     command = tkinter_frame.basic_isat,
@@ -191,23 +190,23 @@ class LEAP_Buttons:
             tkinter_frame.cursor_show_button = ctk.CTkCheckBox(master = tkinter_frame.cursor_frame,
                     command = lambda: tkinter_frame.hide_cursor(1),
                     variable = tkinter_frame.cursor_visibility[0],
-                    text = "")
+                    text = "",
+                    width = 20,
+                    height = 20)
             tkinter_frame.cursor_show_button_2 = ctk.CTkCheckBox(master = tkinter_frame.cursor_frame,
                     command = lambda: tkinter_frame.hide_cursor(2),
                     variable = tkinter_frame.cursor_visibility[1],
-                    text = "")
+                    text = "",
+                    width = 20,
+                    height = 20)
 
             tkinter_frame.select_all_label = ctk.CTkLabel(master = tkinter_frame.select_all_frame, text = "Select All:")
             tkinter_frame.open_help_and_options_button = ctk.CTkButton(master = tkinter_frame.adding_frame,
                     command = tkinter_frame.open_help_and_options,
-                    text = "h&o")
+                    text = "settings")
             tkinter_frame.hide_button = ctk.CTkButton(master = tkinter_frame.b4_frame,
                     command = tkinter_frame.hide_graph,
                     text = "hide")
-            tkinter_frame.emphasize_button = ctk.CTkButton(master = tkinter_frame.b4_frame,
-                    command = tkinter_frame.emphasize,
-                    text = "emphasize")
-
 
         else:
             tkinter_frame.temperature_button = tk.Button(master = tkinter_frame.temperature_frame,
@@ -310,7 +309,7 @@ class LEAP_Buttons:
 
             tkinter_frame.rescale_button = tk.Button(master = tkinter_frame.adding_frame,
                     command = tkinter_frame.rescale,
-                    text = "Rescale")
+                    text = "rescale")
             tkinter_frame.derivative_button = tk.Button(master = tkinter_frame.math_frame,
                     command = tkinter_frame.derivative,
                     text = "f'")

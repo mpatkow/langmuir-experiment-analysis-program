@@ -1,5 +1,5 @@
 windowsize:	1
 xyseparator:	\t
-datatype:	True
+datatype:	False
 gastype:	40.0
-ecurr_view:	False
+ecurr_view:	True
