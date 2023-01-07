@@ -27,19 +27,19 @@ class Options:
 			self.ecurr_variable = tk.BooleanVar(value=eval(self.options[4]))
 			
 
-			self.windowsize_entry = ctk.CTkEntry(master=self.buttons_frame, textvar=self.windowsize_variable) 
-			self.xyseparator_entry = ctk.CTkEntry(master= self.buttons_frame, textvar = self.xyseparator_variable)
+			self.windowsize_entry = ctk.CTkEntry(master=self.buttons_frame, textvariable=self.windowsize_variable) 
+			self.xyseparator_entry = ctk.CTkEntry(master= self.buttons_frame, textvariable = self.xyseparator_variable)
 			self.datatype_switch = ctk.CTkSwitch(master =  self.buttons_frame, variable = self.datatype_variable,textvariable=tk.StringVar(value=""))
 			self.updater_button = ctk.CTkButton(master=self.buttons_frame, command = self.update_option_values, text="Write")
-			self.gastype_entry = ctk.CTkEntry(master= self.buttons_frame, textvar = self.gastype_variable)
+			self.gastype_entry = ctk.CTkEntry(master= self.buttons_frame, textvariable = self.gastype_variable)
 			self.ecurr_switch = ctk.CTkSwitch(master= self.buttons_frame, variable = self.ecurr_variable,textvariable=tk.StringVar(value=""))
 
 
-			self.windowsize_label = ctk.CTkLabel(master = self.buttons_frame, textvar = tk.StringVar(value="Windowsize:")) 
-			self.xyseparator_label = ctk.CTkLabel(master = self.buttons_frame, textvar = tk.StringVar(value="XY Separator:")) 
-			self.datatype_label= ctk.CTkLabel(master = self.buttons_frame, textvar = tk.StringVar(value="Datatype:")) 
-			self.gastype_label = ctk.CTkLabel(master=self.buttons_frame, textvar = tk.StringVar(value="Gastype (AMU):"))
-			self.ecurr_label = ctk.CTkLabel(master=self.buttons_frame, textvar = tk.StringVar(value="Isat fit show:"))
+			self.windowsize_label = ctk.CTkLabel(master = self.buttons_frame, textvariable = tk.StringVar(value="Windowsize:")) 
+			self.xyseparator_label = ctk.CTkLabel(master = self.buttons_frame, textvariable = tk.StringVar(value="XY Separator:")) 
+			self.datatype_label= ctk.CTkLabel(master = self.buttons_frame, textvariable = tk.StringVar(value="Datatype:")) 
+			self.gastype_label = ctk.CTkLabel(master=self.buttons_frame, textvariable = tk.StringVar(value="Gastype (AMU):"))
+			self.ecurr_label = ctk.CTkLabel(master=self.buttons_frame, textvariable = tk.StringVar(value="Isat fit show:"))
 
 		else:
 			op = tk.Toplevel(top_level)

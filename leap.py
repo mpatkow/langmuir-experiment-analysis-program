@@ -39,15 +39,13 @@ class App(type_of_screen):
     def __init__(self):
         super().__init__()
 
-        option_file = open("options.txt", "r")
-        self.options = [l.split("\t")[1][:-1] for l in option_file.readlines()]
-        option_file.close()
-
-        # Optional starting directory
         try:
-            self.starting_dir = sys.argv[1]
+            option_file = open("options.txt", "r")
+            self.options = [l.split("\t")[1][:-1] for l in option_file.readlines()]
+            option_file.close()
         except:
-            self.starting_dir = "~"
+            print("options file corrupted, run repair_options to restore to default")
+            self.options = [5]
 
         # Set up the basic window things
         self.WIDTH = 1200 
@@ -58,6 +56,7 @@ class App(type_of_screen):
         self.data_analyzer = data_manipulator.data_manipulator()
         self.WR = Widget_Redrawer.Widget_Redrawer()
 
+        
         self.data_type_old			  = False
         self.currently_displayed		= {}
         self.selector_display		   = {}
@@ -74,7 +73,10 @@ class App(type_of_screen):
         self.debye_length			   = tk.DoubleVar()
         self.density					= tk.DoubleVar()
         self.probe_area				 = 0  
-        self.gas_type				   = float(self.options[3])/(10**3 * 6.023 * 10**23) # The atomic mass of the element is entered in options.txt
+        try:
+            self.gas_type				   = float(self.options[3])/(10**3 * 6.023 * 10**23) # The atomic mass of the element is entered in options.txt
+        except:
+            print("options file corrupted, run repair_options to restore to default")
         self.probe_radius			   = tk.DoubleVar()
         self.normal_vp				  = tk.DoubleVar()
         self.bounds					 = [tk.IntVar(value=0),tk.IntVar(value=0),tk.IntVar(value=0),tk.IntVar(value=0)]
@@ -83,23 +85,34 @@ class App(type_of_screen):
         self.elementary_charge          = 1.60217663 * 10 ** (-19)
         self.ecurr_view					= False 
         self.console_input_var              = tk.StringVar()
+        self.valid_commands = {} 
+        
 
         # The normal format this program reads for langmuir sweeps is	  xvalue xy_split yvalue newlinecharacter		   
         # The old format is a continuous, one line list of x1,y1,x2,y2, ... 
         # Other data formats might be added in the future
         # The separator in the normal data format can be modified by changing the xy_split variable in the options file. This defaults to a tab (\t)
-        if self.options[2] == "True":
-            self.data_type_old = True
-        if self.options[4] == "True":
-            self.ecurr_view = True
-        if self.options[1] == "\\t":
-            self.xy_split = "\t"
-        else:
-            self.xy_split = self.options[1]
+        try:
+            if self.options[2] == "True":
+                self.data_type_old = True
+            if self.options[4] == "True":
+                self.ecurr_view = True
+            if self.options[1] == "\\t":
+                self.xy_split = "\t"
+            else:
+                self.xy_split = self.options[1]
+        except:
+            print("options file corrupted, run repair_options to restore to default")
+
 
         LEAP_Frames.LEAP_Frames(self)
         LEAP_Buttons.LEAP_Buttons(self)
         self.redraw_widgets()
+
+        self.console.tag_config('redtag', background="red", foreground="black")
+        self.console.tag_config('yellowtag', background="yellow", foreground="black")
+
+        self.add_commands()
 
     #FIXED
     def redraw_widgets(self):
@@ -109,10 +122,10 @@ class App(type_of_screen):
     def check_selected_files(self):
         opened_files = self.get_selected()
         if len(opened_files) == 0:
-            self.open_popup("NOTICE: no file selected", True)
+            self.open_popup("no file selected", "yellow", "NOTICE")
             return 0
         elif len(opened_files) > 1:
-            self.open_popup("NOTICE: select a single file", True)
+            self.open_popup("select a single file", "yellow", "NOTICE")
             return 2
         else:
             return 1
@@ -148,7 +161,7 @@ class App(type_of_screen):
                 b1 = self.bounds[2].get()
                 b2 = self.bounds[3].get()
             except:
-                self.open_popup("NOTICE: plasma potential fit bounds not set properly", True)
+                self.open_popup("plasma potential fit bounds not set properly", "yellow", "NOTICE")
 
             fname = self.get_selected()[0]
             data_t = self.currently_displayed[fname]
@@ -166,38 +179,63 @@ class App(type_of_screen):
                 self.plot1.get_lines()[self.graph_indexes[fname]].set_marker("o")
                 self.canvas.draw()
 
+    def fix_options(self):
+        f = open("options.txt", "w")
+        f.write("windowsize:\t1\n")
+        f.write("xyseparator:\t\\t\n")
+        f.write("datatype:\tFalse\n")
+        f.write("gastype:\t40.0\n")
+        f.write("ecurr_view:\tFalse\n")
+        f.close()
+        print("options file fixed, restart the program to complete the process") 
+        pass
+
     def console_input_receive(self):
         self.console.configure(state="normal")
         self.console_command(self.console_input_var.get())
-        self.console.insert(tk.END, self.console_input_var.get() + "\n")
+        self.console.insert(tk.END, "> " + self.console_input_var.get() + "\n")
         self.console_input_var.set("")
-        self.console.yview(tk.END)
+        self.console.see("end")
         self.console.configure(state="disabled")
 
-    # make this a separate class or file
+    def add_commands(self):
+        self.valid_commands["explorer"] = ["file_browser",[],[]]
+        self.valid_commands["savgol"] = ["savgol",["winlen", "polyorder"],[51,3]]
+        self.valid_commands["boxav"] = ["box_average",[],[]]
+        self.valid_commands["spline"] = ["spline_extrapolate",[],[]]
+        self.valid_commands["average"] = ["average",[],[]]
+        self.valid_commands["repair_options"] = ["fix_options",[],[]]
+
+    def get_option_values(self, command): 
+        # needs ERROR messages
+        command_name = command.split(" ")[0]
+        command_options_and_values = {}
+        for command_chunk in command.split("-")[1:]:
+            command_options_and_values[command_chunk.split()[0]] = command_chunk.split()[1:] 
+        return command_name,command_options_and_values
+
     def console_command(self, ctxt):
-        if ctxt[0] != ":":
-            return None
-        ctxt = ctxt[1:]
-        cmd = ctxt.split(" ")[0]
-        if cmd == "explorer":
-            self.file_browser()
-        if cmd == "savgol":
-            winlen = 51
-            porder = 3 
-            if "-winlen" in ctxt:
-                winlen = int(ctxt.split("-winlen ")[1].split(" ")[0])
-                if winlen % 2 == 0:
-                    winlen += 1
-            if "-polyorder" in ctxt:
-                porder = int(ctxt.split("-polyorder ")[1].split(" ")[0])
-            self.savgol(o1 = winlen, o2 = porder)
-        if cmd == "boxav":
-            self.box_average()
-        if cmd == "spline":
-            self.spline_extrapolate()
-        if cmd == "average":
-            self.average()
+        cn, co = self.get_option_values(ctxt)
+        if cn in self.valid_commands:
+            fixed_options = self.valid_commands[cn][2][:]
+            for o in co.keys():
+                try:
+                    ii = self.valid_commands[cn][1].index(o)
+                    fixed_options[ii] = int(co[o][0])
+                except:
+                    print("not a valid optoin")
+
+            cmd = "self."
+            cmd += self.valid_commands[cn][0]
+            cmd += "("
+            for o in fixed_options:
+                cmd += str(o)
+                cmd += ","
+            if cmd[-1] == ",":
+                cmd = cmd[:-1]
+            cmd += ")"
+
+            eval(cmd)
     
     def emphasize(self):
         if self.check_selected_files() == 1:
@@ -251,7 +289,7 @@ class App(type_of_screen):
             self.probe_area = self.probe_area_sef.get_value()
             print("Set the probe area to: %f square cm." % self.probe_area)
         except:
-            self.open_popup("NOTICE: No value entered for probe area", True)
+            self.open_popup("No value entered for probe area", "yellow", "NOTICE")
 
     #PRELIM FIX, NOT CHECKED
     def absolute_v(self):
@@ -313,7 +351,7 @@ class App(type_of_screen):
 
     def spline_extrapolate(self):
         if len(self.get_selected()) == 0:
-            self.open_popup("NOTICE: no file selected", True)
+            self.open_popup("no file selected", "yellow", "NOTICE") 
         for fname in self.get_selected():
             try:
                 mytck,myu=itp.splprep([self.currently_displayed[fname][0],self.currently_displayed[fname][1]],k=5, s=0)
@@ -329,6 +367,7 @@ class App(type_of_screen):
         self.console.configure(state="normal")
         self.console.tag_config('info', background="blue", foreground="black")
         self.console.insert(tk.END, "Graph set to zoom mode\n",'info')
+        self.console.see("end")
         self.console.configure(state="disabled")
 
     def panfunc(self):
@@ -336,6 +375,7 @@ class App(type_of_screen):
         self.console.configure(state="normal")
         self.console.tag_config('info', background="blue", foreground="black")
         self.console.insert(tk.END, "Graph set to pan mode\n",'info')
+        self.console.see("end")
         self.console.configure(state="disabled")
 
     # Get rid of the try except
@@ -433,12 +473,11 @@ class App(type_of_screen):
         if arg == "zoom":
             self.fig.canvas.toolbar.zoom()
         elif arg == "pan":
-            print("PAN!")
             self.fig.canvas.toolbar.pan()
 
     def box_average(self):
         if len(self.get_selected()) == 0:
-            self.open_popup("NOTICE: no file selected", True)
+            self.open_popup("no file selected", "yellow", "NOTICE")
         for fname in self.get_selected():
             try:
                 data = self.data_analyzer.box_average(self.currently_displayed[fname])
@@ -449,9 +488,11 @@ class App(type_of_screen):
             except KeyError:
                 print("\a")
 
-    def savgol(self, o1 = 51, o2=3):
+    def savgol(self, o1, o2):
+        if o1 % 2 == 0:
+            o1 += 1
         if len(self.get_selected()) == 0:
-            self.open_popup("NOTICE: no file selected", True)
+            self.open_popup("no file selected", "yellow", "NOTICE")
         for fname in self.get_selected():
             try:
                 smoothed = self.data_analyzer.savgol_smoothing(self.currently_displayed[fname],o1,o2)
@@ -464,7 +505,7 @@ class App(type_of_screen):
     # BETTER NAMES
     def average(self):
         if len(self.get_selected()) == 0:
-            self.open_popup("NOTICE: no file selected", True)
+            self.open_popup("no file selected", "yellow", "NOTICE")
         data_to_average = []
         for fname in self.get_selected():
             data_to_average.append(self.currently_displayed[fname])
@@ -537,18 +578,17 @@ class App(type_of_screen):
             except KeyError:
                 print("\a")
 
-    def open_popup(self,message,warn):
+    def open_popup(self,message,color,name):
         self.console.configure(state="normal")
-        if warn:
-            self.console.tag_config('warning', background="yellow", foreground="black")
-            self.console.insert(tk.END, message + "\n",'warning')
-        else:
-            self.console.tag_config('error', background="red", foreground="black")
-            self.console.insert(tk.END, message + "\n",'error')
+        if color == "red":
+            self.console.insert(tk.END, "[" + name.upper() + "] " + message + "\n", "redtag")
+        if color == "yellow":
+            self.console.insert(tk.END, "[" + name.upper() + "] " + message + "\n", "yellowtag")
+        self.console.see("end")
         self.console.configure(state="disabled")
 
     def file_browser(self):
-        fnames = tk.filedialog.askopenfilenames(initialdir = self.starting_dir, title = "Select a File", filetypes = [("csv files", "*.csv"),("data files", "*.txt"),  ("all files","*.*")])
+        fnames = tk.filedialog.askopenfilenames(initialdir = ".", title = "Select a File", filetypes = [("csv files", "*.csv"),("data files", "*.txt"),  ("all files","*.*")])
         for fname in fnames:
             if fname not in self.selector_display.keys():
                 [x,y] = self.get_data(fname)
@@ -561,7 +601,7 @@ class App(type_of_screen):
                     self.add_graph(fname, x, y)
 
             else:
-                self.open_popup("NOTICE: file already opened", True)
+                self.open_popup("file already opened", "yellow", "NOTICE")
 
     def get_data(self, fname):
         try:
@@ -591,7 +631,7 @@ class App(type_of_screen):
 
             return x,y
         except:
-            self.open_popup("ERR: invalid data", False)
+            self.open_popup("invalid data", "red", "ERROR")
             return None,None
 
     def add_graph(self, f, x, y):
