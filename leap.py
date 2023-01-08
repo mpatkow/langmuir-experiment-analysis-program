@@ -218,6 +218,8 @@ class App(type_of_screen):
         self.valid_commands["ln"] = ["natural",[],[]]
         self.valid_commands["trim"] = ["trim",[],[]]
         self.valid_commands["hide"] = ["hide_graph",[],[]]
+        self.valid_commands["gettemp"] = ["temperature_value",[],[]]
+        self.valid_commands["settemp"] = ["set_temp",["t"],[0]]
 
     def get_option_values(self, command): 
         # needs ERROR messages
@@ -234,7 +236,7 @@ class App(type_of_screen):
             for o in co.keys():
                 try:
                     ii = self.valid_commands[cn][1].index(o)
-                    fixed_options[ii] = int(co[o][0])
+                    fixed_options[ii] = co[o][0]
                 except:
                     print("not a valid optoin")
 
@@ -251,6 +253,7 @@ class App(type_of_screen):
             eval(cmd)
     
     def raiseto(self,p=2):
+        p = int(p)
         if self.check_selected_files() == 1:
             fname = self.get_selected()[0]
             newfname = self.get_next_name(fname)
@@ -360,6 +363,7 @@ class App(type_of_screen):
         print(self.data_analyzer.druyvesteyn_temperature(data, temp_fit_lower, temp_fit_upper))
 
     def spline_extrapolate(self,points=1000):
+        points = int(points)
         if len(self.get_selected()) == 0:
             self.open_popup("no file selected", "yellow", "NOTICE") 
         for fname in self.get_selected():
@@ -390,15 +394,20 @@ class App(type_of_screen):
 
     def basic_isat(self):
         if len(self.get_selected()) == 0:
+            self.open_popup("no file selected", "yellow", "NOTICE") 
+        else:
             fname = self.get_selected()[0]
-        for fname in self.get_selected():
-            [lower_abs, upper_abs] = self.get_cursor_values(fname, self.currently_displayed)
-            isat,electron_current = self.data_analyzer.ion_saturation_basic(self.currently_displayed[fname],lower_abs, upper_abs)
-            if self.ecurr_view:
-                newfname = self.get_next_name(fname)
-                self.add_graph(newfname, self.currently_displayed[fname][0], isat)
-            newfname = self.get_next_name(fname)
-            self.add_graph(newfname + "_ecurr", self.currently_displayed[fname][0], electron_current)
+            for fname in self.get_selected():
+                [lower_abs, upper_abs] = self.get_cursor_values(fname, self.currently_displayed)
+                try:
+                    isat,electron_current = self.data_analyzer.ion_saturation_basic(self.currently_displayed[fname],lower_abs, upper_abs)
+                    if self.ecurr_view:
+                        newfname = self.get_next_name(fname)
+                        self.add_graph(newfname, self.currently_displayed[fname][0], isat)
+                    newfname = self.get_next_name(fname)
+                    self.add_graph(newfname + "_ecurr", self.currently_displayed[fname][0], electron_current)
+                except:
+                    pass
 
     def basic_isat_auto(self):
         fname = self.get_selected()[0]
@@ -506,6 +515,8 @@ class App(type_of_screen):
                 print("\a")
 
     def savgol(self, o1=53, o2=3):
+        o1 = int(o1)
+        o2 = int(o2)
         if o1 % 2 == 0:
             o1 += 1
         if len(self.get_selected()) == 0:
@@ -577,11 +588,19 @@ class App(type_of_screen):
 
             self.temperature.set(str(av) + " +- " + str(std))
 
-            final_temp_statement = u"Temperature: %f \u00b1 %f" % (av, std)
+            final_temp_statement = u"Temperature: %f \u00b1 %f eV" % (av, std)
 
             self.open_popup(final_temp_statement, "", "RESULT")
 
+    def temperature_value(self):
+        statement = "The temperature register is currently set to " + self.temperature.get() + " eV"
+        self.open_popup(statement, "", "INFO")
+
+    def set_temp(self, temp_to_set):
+        self.temperature.set(str(temp_to_set) + " +- " + "0")
+
     def derivative(self,order=1):
+        order = int(order)
         for fname in self.get_selected():
             try:
                 data = self.data_analyzer.derivative(self.currently_displayed[fname],order)

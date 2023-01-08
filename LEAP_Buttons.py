@@ -14,7 +14,7 @@ class LEAP_Buttons:
 
             tkinter_frame.temperature_button = ctk.CTkButton(master = tkinter_frame.b3_frame,
                     command = tkinter_frame.temp_fit,
-                    text = u"kT\u2091")
+                    text = "temp fit")
             tkinter_frame.temperature_label = ctk.CTkLabel(master = tkinter_frame.temperature_frame,
                     textvariable = tkinter_frame.temperature)
 
