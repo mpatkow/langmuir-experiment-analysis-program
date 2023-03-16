@@ -1,14 +1,9 @@
 import tkinter as tk
-import time
-import os
-import matplotlib
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,NavigationToolbar2Tk)
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
 import numpy as np
-import sys
 from matplotlib import pyplot as plt
 import data_manipulator
-import platform
 import math
 from tkinter.filedialog import asksaveasfilename
 import LEAP_Frames
@@ -16,28 +11,16 @@ import LEAP_Buttons
 import Options
 import Widget_Redrawer
 from scipy import interpolate as itp
-mode = True
-try:
-    import customtkinter as ctk
-except:
-    print("Custom Tkinter not detected. Running in primitive mode. Run  pip install customtkinter  to install the package." )	
-    mode = False
+import customtkinter as ctk
+import re
 
-if mode:
-    ctk.set_appearance_mode("Dark")	# Modes: system (default), light, dark
-    ctk.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
-plt.style.use("default")
-
-# when doing manipulations improve the name of the new file
-
-if mode == True:
-    type_of_screen = ctk.CTk
-else:
-    type_of_screen = tk.Tk
-
-class App(type_of_screen):
+class App(ctk.CTk):
     def __init__(self):
         super().__init__()
+
+        ctk.set_appearance_mode("Dark")	     # Modes: system (default), light, dark
+        ctk.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
+        plt.style.use("default")             # Many other themes available, check matplotlib documentation
 
         try:
             option_file = open("options.txt", "r")
@@ -47,7 +30,6 @@ class App(type_of_screen):
             print("options file corrupted, run repair_options to restore to default")
             self.options = [5]
 
-        # Set up the basic window things
         self.WIDTH = 1200 
         self.HEIGHT = 500 
         self.title("Langmuir Experiment Analyzer Program")
@@ -67,7 +49,7 @@ class App(type_of_screen):
         self.cursor_visibility		  = [tk.IntVar(value=0), tk.IntVar(value=0)]
         self.fit_bound				  = [tk.IntVar(value=0), tk.IntVar(value=0)]
         self.cursor_positions		   = []
-        self.temperature				= tk.StringVar(value = "---")
+        self.temperature				= tk.StringVar(value = "NaN")
         self.floating_potential		 = tk.DoubleVar()
         self.debye_length			   = tk.DoubleVar()
         self.density					= tk.DoubleVar()
@@ -106,18 +88,13 @@ class App(type_of_screen):
 
         LEAP_Frames.LEAP_Frames(self)
         LEAP_Buttons.LEAP_Buttons(self)
-        self.redraw_widgets()
+        self.WR.redraw_widgets(self)
 
         self.console.tag_config('redtag', background="red", foreground="black")
         self.console.tag_config('yellowtag', background="yellow", foreground="black")
 
         self.add_commands()
 
-    #FIXED
-    def redraw_widgets(self):
-        self.WR.redraw_widgets(self)
-
-    #FIXED
     def check_selected_files(self):
         opened_files = self.get_selected()
         if len(opened_files) == 0:
@@ -685,11 +662,12 @@ class App(type_of_screen):
         file_frame = ctk.CTkFrame(master = self.selector_frame)
 
         cb_value = tk.IntVar()
-        #label = ctk.CTkLabel(master = file_frame, text = f.split("/")[-1])
+
+        splittedfname = f.split("/")[-1]
         if self.next_index == 0:
-            label = ctk.CTkLabel(master = file_frame, text = "file 1")
+            label = ctk.CTkLabel(master = file_frame, text = splittedfname)
         else: 
-            label = ctk.CTkLabel(master = file_frame, text = "file " + str(self.next_index))
+            label = ctk.CTkLabel(master = file_frame, text = splittedfname)
         cb = ctk.CTkCheckBox(master = file_frame, text = "",variable = cb_value)
 
         lineee = self.plot(x,y)
@@ -730,21 +708,44 @@ class App(type_of_screen):
         self.plot1.plot(x,y,'o')
         self.canvas.draw()
 
-    def get_next_name(self,prelim):
-        relevant_numbers = []
-        prelim_type = prelim.split(".")[0].split("__")[0]
+
+    def get_trailing_nums(self, numtosearch):
+        a = re.search(r'\d+$', numtosearch)
+        return int(a.group()) if a else None
+    
+    def get_beginning_string(self, stringtosearch):
+        ns = "0123456789"
+        for i in range(len(stringtosearch)-1, -1, -1):
+            if stringtosearch[i] not in ns:
+                return stringtosearch[0:i+1]
+
+
+    def get_next_name(self, prelim):
+        existing_extensions = []
+
+        ntp = prelim.split(".")
+        ntp_primary = ntp[0]
+        ntp_extension = ntp[1]
+        ntp_number = self.get_trailing_nums(ntp_primary)
+        ntp_nonumber = self.get_beginning_string(ntp_primary)
+
+        if ntp_number != None:
+            existing_extensions.append(int(ntp_number))
+
         for f in self.selector_display.keys():
-            if prelim_type == f.split(".")[0].split("__")[0]:
-                try:
-                    relevant_numbers.append(int(f.split(".")[0].split("__")[-1]))
-                except:
-                    pass
+            f_primary = f.split(".")[0]
+            f_number = self.get_trailing_nums(f_primary)
+            f_name = None
+            f_nonumber = self.get_beginning_string(f_primary)
+
+            if ntp_nonumber == f_nonumber:
+                    existing_extensions.append(f_number)
 
         i = 0
-        while i in relevant_numbers:
+        while i in existing_extensions:
             i+=1
 
-        return prelim.split(".")[0].split("__")[0] + "__" + str(i) + "." + prelim.split(".")[-1]
+        return ntp_nonumber + str(i) + "." + ntp_extension        
 
 
 if __name__ == "__main__":
