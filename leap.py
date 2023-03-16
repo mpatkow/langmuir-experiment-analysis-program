@@ -646,12 +646,13 @@ class App(ctk.CTk):
 
             ################# EXPERIMENTAL #################
 
-            avv = np.average(y)
-            for i in range(1,len(y)-1):
-                if abs(y[i]-avv) >= 0.1:
-                    y[i] = (y[i+1] + y[i-1])/2
+            #avv = np.average(y)
+            #for i in range(1,len(y)-1):
+            #    if abs(y[i]-avv) >= 0.1:
+            #        y[i] = (y[i+1] + y[i-1])/2
 
             return x,y
+            
         except:
             self.open_popup("invalid data", "red", "ERROR")
             return None,None
@@ -709,17 +710,27 @@ class App(ctk.CTk):
         self.canvas.draw()
 
 
-    def get_trailing_nums(self, numtosearch):
-        a = re.search(r'\d+$', numtosearch)
-        return int(a.group()) if a else None
-    
-    def get_beginning_string(self, stringtosearch):
-        ns = "0123456789"
-        for i in range(len(stringtosearch)-1, -1, -1):
-            if stringtosearch[i] not in ns:
-                return stringtosearch[0:i+1]
 
 
+
+
+
+
+
+
+
+    # Returns the next avaialable filename, found as follows
+    #  - consider "filename12.txt"
+    #  - the extension is ignored (in this case .txt)
+    #  - the final number (consecutive string of numerical elements) is taken from the name (in this case 12)
+    #  - the rest of the string can be called the name (in this case filename)
+    # 
+    # Now the other existing files are compared to the NAME only.
+    # Final number takes next lowest existing value.
+    # Returns name + number + . + extension
+    #
+    # WARNING! Alters the final number, may cause unintended bugs. 
+    # For example, if the filename is "sweep1/13/2005.txt", the next filename will probably return "sweep1/13/2006.txt".
     def get_next_name(self, prelim):
         existing_extensions = []
 
@@ -735,7 +746,6 @@ class App(ctk.CTk):
         for f in self.selector_display.keys():
             f_primary = f.split(".")[0]
             f_number = self.get_trailing_nums(f_primary)
-            f_name = None
             f_nonumber = self.get_beginning_string(f_primary)
 
             if ntp_nonumber == f_nonumber:
@@ -745,7 +755,19 @@ class App(ctk.CTk):
         while i in existing_extensions:
             i+=1
 
-        return ntp_nonumber + str(i) + "." + ntp_extension        
+        return ntp_nonumber + str(i) + "." + ntp_extension   
+
+    # Helper function for get_next_name
+    def get_trailing_nums(self, numtosearch):
+        a = re.search(r'\d+$', numtosearch)
+        return int(a.group()) if a else None
+    
+    # Helper function for get_next_name
+    def get_beginning_string(self, stringtosearch):
+        ns = "0123456789"
+        for i in range(len(stringtosearch)-1, -1, -1):
+            if stringtosearch[i] not in ns:
+                return stringtosearch[0:i+1]     
 
 
 if __name__ == "__main__":

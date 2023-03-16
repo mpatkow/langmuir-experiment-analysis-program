@@ -1,5 +1,1 @@
-windowsize:	1
-xyseparator:	\t
-datatype:	False
-gastype:	40.0
-ecurr_view:	False
+k
