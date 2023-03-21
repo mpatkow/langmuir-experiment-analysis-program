@@ -1,18 +1,15 @@
 import tkinter as tk
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
+import re
+import math
+from tkinter.filedialog import asksaveasfilename
+import customtkinter as ctk
+from scipy import interpolate as itp
 import numpy as np
 from matplotlib import pyplot as plt
 import data_manipulator
-import math
-from tkinter.filedialog import asksaveasfilename
 import LEAP_Frames
 import LEAP_Buttons
-import Options
 import Widget_Redrawer
-from scipy import interpolate as itp
-import customtkinter as ctk
-import re
 
 class App(ctk.CTk):
     def __init__(self):
@@ -27,7 +24,7 @@ class App(ctk.CTk):
             self.options = [l.split("\t")[1][:-1] for l in option_file.readlines()]
             option_file.close()
         except:
-            print("options file corrupted, run repair_options to restore to default")
+            print("options file corrupted, run repair_options in the LEAP console to restore to default")
             self.options = [5]
 
         self.WIDTH = 1200 
@@ -35,7 +32,7 @@ class App(ctk.CTk):
         self.title("Langmuir Experiment Analyzer Program")
         self.geometry("%ix%i" % (self.WIDTH, self.HEIGHT))
 
-        self.data_analyzer = data_manipulator.data_manipulator()
+        self.data_analyzer = data_manipulator.data_manipulator(self)
         self.WR = Widget_Redrawer.Widget_Redrawer()
 
         self.data_type_old			  = False
@@ -53,24 +50,24 @@ class App(ctk.CTk):
         self.floating_potential		 = tk.DoubleVar()
         self.debye_length			   = tk.DoubleVar()
         self.density					= tk.DoubleVar()
-        self.probe_area				 = 0  
+        self.probe_area				 = 0 
         try:
             self.gas_type				   = float(self.options[3])/(10**3 * 6.023 * 10**23) # The atomic mass of the element is entered in options.txt
         except:
-            print("options file corrupted, run repair_options to restore to default")
+            print("options file corrupted, run repair_options in the program console to restore to default")
         self.probe_radius			   = tk.DoubleVar()
         self.normal_vp				  = tk.DoubleVar()
         self.bounds					 = [tk.IntVar(value=0),tk.IntVar(value=0),tk.IntVar(value=0),tk.IntVar(value=0)]
         self.bounds1					= tk.StringVar(value = str(self.bounds[0].get()) + " to " + str(self.bounds[1].get()))
         self.bounds2					= tk.StringVar(value = str(self.bounds[2].get()) + " to " + str(self.bounds[3].get()))
         self.elementary_charge          = 1.60217663 * 10 ** (-19)
-        self.ecurr_view					= False 
+        self.ecurr_view					= False
         self.console_input_var              = tk.StringVar()
-        self.valid_commands = {} 
+        self.valid_commands = {}
         
 
         # The normal format this program reads for langmuir sweeps is	  xvalue xy_split yvalue newlinecharacter		   
-        # The old format is a continuous, one line list of x1,y1,x2,y2, ... 
+        # The old format is a continuous, one line list of x1,y1,x2,y2, ...
         # Other data formats might be added in the future
         # The separator in the normal data format can be modified by changing the xy_split variable in the options file. This defaults to a tab (\t)
         try:
@@ -95,55 +92,25 @@ class App(ctk.CTk):
 
         self.add_commands()
 
-    def check_selected_files(self):
-        opened_files = self.get_selected()
-        if len(opened_files) == 0:
-            self.open_popup("no file selected", "yellow", "NOTICE")
-            return 0
-        elif len(opened_files) > 1:
-            self.open_popup("select a single file", "yellow", "NOTICE")
-            return 2
-        else:
-            return 1
-
-    #FIXED	
     def hide_cursor(self, n):
-        if n == 1:
-            if self.cursor1.get_linestyle() == "None":
-                self.cursor1.set_linestyle("solid")
-            else:
-                self.cursor1.set_linestyle("None")
-        elif n == 2:
-            if self.cursor2.get_linestyle() == "None":
-                self.cursor2.set_linestyle("solid")
-            else:
-                self.cursor2.set_linestyle("None")
+        """Toggle the visibility of the n-th cursor"""
+        cursor = getattr(self, f"cursor{n}")
+        if cursor.get_linestyle() == "None":
+            cursor.set_linestyle("solid")
+        else:
+            cursor.set_linestyle("None")
 
         self.canvas.draw()
 
-    #FIXED
+    #TODO make more sensible
     def get_cursor_values(self,fname, data_t):
+        """
+        Returns the current values of the cursors.
+        """
         data_t = self.currently_displayed[fname]
         lower_abs = np.absolute(data_t[0] - self.fit_bound[0].get())
         upper_abs = np.absolute(data_t[0] - self.fit_bound[1].get())
         return sorted([np.where(upper_abs == np.min(upper_abs))[0][0],np.where(lower_abs == np.min(lower_abs))[0][0]])
-
-    #PRELIM FIX, NOT CHECKED	
-    def normal_potential(self):
-        if self.check_selected_files() == 1:
-            try:
-                a1 = self.bounds[0].get()
-                a2 = self.bounds[1].get()
-                b1 = self.bounds[2].get()
-                b2 = self.bounds[3].get()
-            except:
-                self.open_popup("plasma potential fit bounds not set properly", "yellow", "NOTICE")
-
-            fname = self.get_selected()[0]
-            data_t = self.currently_displayed[fname]
-            m1,intercept1 = np.polyfit(data_t[0][a1:a2], data_t[1][a1:a2], 1)
-            m2,intercept2 = np.polyfit(data_t[0][b1:b2], data_t[1][b1:b2], 1)
-            self.normal_vp.set((intercept2-intercept1)/(m1-m2))
 
     def hide_graph(self):
         for a in self.get_selected():
@@ -155,6 +122,7 @@ class App(ctk.CTk):
                 self.plot1.get_lines()[self.graph_indexes[fname]].set_marker("o")
                 self.canvas.draw()
 
+    # TODO: move this file to the Options.py file
     def fix_options(self):
         f = open("options.txt", "w")
         f.write("windowsize:\t1\n")
@@ -163,8 +131,7 @@ class App(ctk.CTk):
         f.write("gastype:\t40.0\n")
         f.write("ecurr_view:\tFalse\n")
         f.close()
-        print("options file fixed, restart the program to complete the process") 
-        pass
+        print("Options file fixed, restart the program to complete the process") 
 
     def console_input_receive(self):
         self.console.configure(state="normal")
@@ -174,6 +141,8 @@ class App(ctk.CTk):
         self.console.see("end")
         self.console.configure(state="disabled")
 
+    # TODO: Add the commands to a file
+    # FIXME: commands broken with the new button handling method
     def add_commands(self):
         self.valid_commands["explorer"] = ["file_browser",[],[]]
         self.valid_commands["savgol"] = ["savgol",["winlen", "polyorder"],[53,3]]
@@ -228,28 +197,7 @@ class App(ctk.CTk):
             cmd += ")"
 
             eval(cmd)
-    
-    def raiseto(self,p=2):
-        p = int(p)
-        if self.check_selected_files() == 1:
-            fname = self.get_selected()[0]
-            newfname = self.get_next_name(fname)
-            sq = self.currently_displayed[fname][1] ** p
-            self.add_graph(newfname, self.currently_displayed[fname][0], sq)
 
-    def save_bounds_1(self):
-        fname = self.get_selected()[0]
-        cvalues = self.get_cursor_values(fname, self.currently_displayed)
-        self.bounds[0].set(cvalues[0])
-        self.bounds[1].set(cvalues[1])
-        self.bounds1.set(value = str(int(self.currently_displayed[fname][0][self.bounds[0].get()])) + " to " + str(int(self.currently_displayed[fname][0][self.bounds[1].get()])))
-
-    def save_bounds_2(self):
-        fname = self.get_selected()[0]
-        cvalues = self.get_cursor_values(fname, self.currently_displayed)
-        self.bounds[2].set(cvalues[0])
-        self.bounds[3].set(cvalues[1])
-        self.bounds2.set(value = str(int(self.currently_displayed[fname][0][self.bounds[2].get()])) + " to " + str(int(self.currently_displayed[fname][0][self.bounds[3].get()])))
 
     def basic_density(self):
         fname = self.get_selected()[0]
@@ -271,15 +219,6 @@ class App(ctk.CTk):
             print("Set the probe area to: %f square cm." % self.probe_area)
         except:
             self.open_popup("No value entered for probe area", "yellow", "NOTICE")
-
-    #PRELIM FIX, NOT CHECKED
-    def absolute_v(self):
-        if self.check_selected_files() == 1:
-            fname = self.get_selected()[0]
-            newfname = self.get_next_name(fname)
-            sq = np.square(self.currently_displayed[fname][1])
-            a = self.data_analyzer.absolute_val(self.currently_displayed[fname])[1]
-            self.add_graph(newfname, self.currently_displayed[fname][0], a)
 
     #PRELIM FIX, NOT CHECKED
     def save_data(self):
@@ -316,9 +255,6 @@ class App(ctk.CTk):
         self.fig.savefig(fname,dpi = plt.gcf().dpi)
         self.canvas.draw()
 
-    def open_help_and_options(self):
-        self.help_and_options = Options.Options(self)
-
     # incomplete
     def plasma_potential(self):
         fname = self.get_selected()[0]
@@ -344,63 +280,59 @@ class App(ctk.CTk):
         if len(self.get_selected()) == 0:
             self.open_popup("no file selected", "yellow", "NOTICE") 
         for fname in self.get_selected():
-            try:
-                mytck,myu=itp.splprep([self.currently_displayed[fname][0],self.currently_displayed[fname][1]],k=5, s=0)
-                xnew,ynew= itp.splev(np.linspace(0,1,points),mytck)
-                newfname = self.get_next_name(fname)
-                if newfname not in list(self.graph_indexes.keys()):
-                    self.add_graph(newfname, xnew, ynew)
-            except:
-                print(e)
+            mytck,myu=itp.splprep([self.currently_displayed[fname][0],self.currently_displayed[fname][1]],k=5, s=0)
+            xnew,ynew= itp.splev(np.linspace(0,1,points),mytck)
+            newfname = self.get_next_name(fname)
+            if newfname not in list(self.graph_indexes.keys()):
+                self.add_graph(newfname, xnew, ynew)
 
-    def zoomfunc(self):
-        self.fig.canvas.toolbar.zoom()
+    def change_scrolling_mode(self, new_mode):
+        """
+        Sets the mode of the tkinter canvas to either zoom or pan mode, as specified by new_mode.
+        """
+        moving_function = getattr(self.fig.canvas.toolbar, new_mode)
+        moving_function()
         self.console.configure(state="normal")
         self.console.tag_config('info', background="blue", foreground="black")
-        self.console.insert(tk.END, "Graph set to zoom mode\n",'info')
+        self.console.insert(tk.END, f"Graph set to {new_mode} mode\n",'info')
         self.console.see("end")
         self.console.configure(state="disabled")
 
-    def panfunc(self):
-        self.fig.canvas.toolbar.pan()
-        self.console.configure(state="normal")
-        self.console.tag_config('info', background="blue", foreground="black")
-        self.console.insert(tk.END, "Graph set to pan mode\n",'info')
-        self.console.see("end")
-        self.console.configure(state="disabled")
+    def button_handler(self, button, options_list, expected_files_type):
+        """ 
+        Handle the click of a button by calling the corresponding method. 
+        If no file is selected, display a popup message and return.
+        Otherwise, call the method corresponding to `button`,
+        passing in each selected file and adding the returned functions to the graph.
 
-    def basic_isat(self):
-        if len(self.get_selected()) == 0:
-            self.open_popup("no file selected", "yellow", "NOTICE") 
+        If expected_files is 0, this indicates a function that may take multiple sets of data,
+        but the command is executed for each function seperately
+        If expected_files is 1, this indicates a function that only takes one set of data.
+        If expected_files is 2, this indicates a function that does not take any data. 
+        It only returns/modifies a value or variable.
+        
+        Parameters:
+            button (str): The name of the button that was clicked.
+            expected_files_type (int): The type of files the button's function expects
+           
+        Returns:
+            None.
+        """
+        if expected_files_type == 2:
+            button_function = getattr(self.data_analyzer, f"{button}")
+            button_function(fname, options_list)
         else:
-            fname = self.get_selected()[0]
-            for fname in self.get_selected():
-                [lower_abs, upper_abs] = self.get_cursor_values(fname, self.currently_displayed)
-                try:
-                    isat,electron_current = self.data_analyzer.ion_saturation_basic(self.currently_displayed[fname],lower_abs, upper_abs)
-                    if self.ecurr_view:
-                        newfname = self.get_next_name(fname)
-                        self.add_graph(newfname, self.currently_displayed[fname][0], isat)
-                    newfname = self.get_next_name(fname)
-                    self.add_graph(newfname + "_ecurr", self.currently_displayed[fname][0], electron_current)
-                except:
-                    pass
+            if len(self.get_selected()) == 0:
+                self.open_popup("no file selected", "yellow", "NOTICE")
+            elif len(self.get_selected()) > 1 and expected_files_type == 1:
+                self.open_popup("this function only accepts one set of data", "yellow", "NOTICE")
+            else:
+                for fname in self.get_selected():
+                    button_function = getattr(self.data_analyzer, f"{button}")
+                    returned_functions = button_function(fname, options_list)
+                    for function in list(returned_functions):
+                        self.add_graph(self.get_next_name(fname), function[0], function[1])
 
-    def basic_isat_auto(self):
-        fname = self.get_selected()[0]
-        data_t = self.currently_displayed[fname]
-        isat,electron_current = self.data_analyzer.ion_saturation_basic_auto(data_t)
-        self.add_graph(fname + "_isat", self.currently_displayed[fname][0], isat)
-        self.add_graph(fname + "_ecurr", self.currently_displayed[fname][0], electron_current)
-
-    def oml(self):
-        fname = self.get_selected()[0]
-        data_t = self.currently_displayed[fname]
-        [lower_abs, upper_abs] = self.get_cursor_values(fname, self.currently_displayed)
-        #density = self.data_analyzer.oml_theory(data_t,np.where(lower_abs == np.min(lower_abs))[0][0],np.where(upper_abs == np.min(upper_abs))[0][0],self.probe_area_input.get(),self.ion_mass_input.get())
-        ddd = self.data_analyzer.oml_theory(data_t,lower_abs,upper_abs,self.probe_area,6.62 * 10**(-26))
-        self.density.set(ddd)
-        print(ddd)
 
     def debye(self):
         l_squared = 8.8541878128*10**(-12)*float(self.temperature.get().split(' ')[0])/(1.60217663*10**(-19) * float(self.density.get()) * 10**6)
@@ -474,12 +406,6 @@ class App(ctk.CTk):
             newfname = self.get_next_name(fname)
             self.add_graph(newfname, self.currently_displayed[fname][0][xmin:xmax], self.currently_displayed[fname][1][xmin:xmax])
 
-    def dropdown_test_function(self,arg):
-        if arg == "zoom":
-            self.fig.canvas.toolbar.zoom()
-        elif arg == "pan":
-            self.fig.canvas.toolbar.pan()
-
     def box_average(self):
         if len(self.get_selected()) == 0:
             self.open_popup("no file selected", "yellow", "NOTICE")
@@ -499,13 +425,10 @@ class App(ctk.CTk):
         if len(self.get_selected()) == 0:
             self.open_popup("no file selected", "yellow", "NOTICE")
         for fname in self.get_selected():
-            try:
-                smoothed = self.data_analyzer.savgol_smoothing(self.currently_displayed[fname],o1,o2)
-                newfname = self.get_next_name(fname)
-                if newfname not in list(self.graph_indexes.keys()):
-                    self.add_graph(newfname, self.currently_displayed[fname][0], smoothed)
-            except:
-                print(e)
+            smoothed = self.data_analyzer.savgol_smoothing(self.currently_displayed[fname],o1,o2)
+            newfname = self.get_next_name(fname)
+            if newfname not in list(self.graph_indexes.keys()):
+                self.add_graph(newfname, self.currently_displayed[fname][0], smoothed)
 
     # make different sized files be comaptible with average
     def average(self):
@@ -525,18 +448,23 @@ class App(ctk.CTk):
             except:
                 self.open_popup("files not same size", "yellow", "NOTICE")
 
-    #FIXED
-    def incr(self,n,cnum):
+    def incr(self, n, cnum):
+        """
+        Increments the value of the specified cursor by the given amount.
+
+        Parameters:
+        n (int): The amount by which to increment the cursor.
+        cnum (int): The number of the cursor to increment (either 1 or 2).
+
+        Returns:
+        None
+        """
         self.fit_bound[cnum-1].set(self.fit_bound[cnum-1].get()+n)
         if cnum == 1:
             self.cursor1.set_xdata(self.fit_bound[cnum-1].get())
         if cnum == 2:
             self.cursor2.set_xdata(self.fit_bound[cnum-1].get())
         self.canvas.draw()
-
-    #FIXED
-    def minu(self,n,cnum):
-        self.incr(-n, cnum)
 
     def temp_fit(self):
         if len(self.get_selected()) == 0:
@@ -597,6 +525,19 @@ class App(ctk.CTk):
                 self.add_graph(newfname, data[0], data[1])
             except KeyError:
                 print("\a")
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def open_popup(self,message,color,name):
         self.console.configure(state="normal")
@@ -669,13 +610,14 @@ class App(ctk.CTk):
             label = ctk.CTkLabel(master = file_frame, text = splittedfname)
         else: 
             label = ctk.CTkLabel(master = file_frame, text = splittedfname)
-        cb = ctk.CTkCheckBox(master = file_frame, text = "",variable = cb_value)
-
-        lineee = self.plot(x,y)
+        cb = ctk.CTkCheckBox(master = file_frame, text = "", variable = cb_value)
 
         self.selector_display.update({f: [file_frame,cb_value]})
         self.update_next_index()
         self.graph_indexes.update({f: self.next_index})
+
+        self.plot1.plot(x,y,'o')
+        self.canvas.draw()
 
         file_frame.pack()
         label.grid(row=0, column=0)
@@ -705,33 +647,21 @@ class App(ctk.CTk):
 
         self.canvas.draw()
 
-    def plot(self,x,y):
-        self.plot1.plot(x,y,'o')
-        self.canvas.draw()
-
-
-
-
-
-
-
-
-
-
-
-    # Returns the next avaialable filename, found as follows
-    #  - consider "filename12.txt"
-    #  - the extension is ignored (in this case .txt)
-    #  - the final number (consecutive string of numerical elements) is taken from the name (in this case 12)
-    #  - the rest of the string can be called the name (in this case filename)
-    # 
-    # Now the other existing files are compared to the NAME only.
-    # Final number takes next lowest existing value.
-    # Returns name + number + . + extension
-    #
-    # WARNING! Alters the final number, may cause unintended bugs. 
-    # For example, if the filename is "sweep1/13/2005.txt", the next filename will probably return "sweep1/13/2006.txt".
     def get_next_name(self, prelim):
+        """
+        Returns the next avaialable filename, found as follows
+        - consider "filename12.txt"
+        - the extension is ignored (in this case .txt)
+        - the final number (consecutive string of numerical elements) is taken from the name (in this case 12)
+        - the rest of the string can be called the name (in this case filename)
+        
+        Now the other existing files are compared to the NAME only.
+        Final number takes next lowest existing value.
+        Returns name + number + . + extension
+        
+        WARNING! Alters the final number, may cause unintended bugs. 
+        For example, if the filename is "sweep1/13/2005.txt", the next filename will probably return "sweep1/13/2006.txt".
+        """
         existing_extensions = []
 
         ntp = prelim.split(".")
@@ -757,18 +687,26 @@ class App(ctk.CTk):
 
         return ntp_nonumber + str(i) + "." + ntp_extension   
 
-    # Helper function for get_next_name
     def get_trailing_nums(self, numtosearch):
+        """
+        Helper function for get_next_name
+
+        Function returns the last set of numerical digits in a given string
+        """
         a = re.search(r'\d+$', numtosearch)
         return int(a.group()) if a else None
-    
-    # Helper function for get_next_name
-    def get_beginning_string(self, stringtosearch):
-        ns = "0123456789"
-        for i in range(len(stringtosearch)-1, -1, -1):
-            if stringtosearch[i] not in ns:
-                return stringtosearch[0:i+1]     
 
+    def get_beginning_string(self, stringtosearch):
+        """
+        Helper function for get_next_name
+
+        Given a string, return the substring that starts at the beginning of the string
+        and ends at the last non-numeric character in the string.
+        """
+        numericals = "0123456789"
+        for i in range(len(stringtosearch)-1, -1, -1):
+            if stringtosearch[i] not in numericals:
+                return stringtosearch[0:i+1]     
 
 if __name__ == "__main__":
     app = App()

@@ -1,6 +1,7 @@
 import customtkinter as ctk
 import tkinter as tk
 import SmartEnterField as sef
+import Options
 
 class LEAP_Buttons:
     def __init__(self, tkinter_frame=False):
@@ -53,10 +54,10 @@ class LEAP_Buttons:
                 command = tkinter_frame.save_image_data,
                 text = "save image")
         tkinter_frame.zoom_button = ctk.CTkButton(master = tkinter_frame.adding_frame,
-                command = tkinter_frame.zoomfunc,
+                command = lambda: tkinter_frame.change_scrolling_mode("zoom"),
                 text = "zoom")
         tkinter_frame.pan_button = ctk.CTkButton(master = tkinter_frame.adding_frame,
-                command = tkinter_frame.panfunc,
+                command = lambda: tkinter_frame.change_scrolling_mode("pan"),
                 text = "pan")
         tkinter_frame.trim_button = ctk.CTkButton(master = tkinter_frame.b4_frame,
                 command = tkinter_frame.trim,
@@ -76,11 +77,11 @@ class LEAP_Buttons:
                 text = ">>",
                 width = 5)
         tkinter_frame.minus_button = ctk.CTkButton(master = tkinter_frame.cursor_frame,
-                command = lambda: tkinter_frame.minu(1,1),
+                command = lambda: tkinter_frame.incr(-1,1),
                 text = "<",
                 width = 5)
         tkinter_frame.minus_button_l = ctk.CTkButton(master = tkinter_frame.cursor_frame,
-                command = lambda: tkinter_frame.minu(10,1),
+                command = lambda: tkinter_frame.incr(-10,1),
                 text = "<<",
                 width = 5)
         tkinter_frame.plus_button_2 = ctk.CTkButton(master = tkinter_frame.cursor_frame,
@@ -92,11 +93,11 @@ class LEAP_Buttons:
                 text = ">>",
                 width = 5)
         tkinter_frame.minus_button_2 = ctk.CTkButton(master = tkinter_frame.cursor_frame,
-                command = lambda: tkinter_frame.minu(1,2),
+                command = lambda: tkinter_frame.incr(-1,2),
                 text = "<",
                 width = 5)
         tkinter_frame.minus_button_l_2 = ctk.CTkButton(master = tkinter_frame.cursor_frame,
-                command = lambda: tkinter_frame.minu(10,2),
+                command = lambda: tkinter_frame.incr(-10,2),
                 text = "<<",
                 width = 5)
 
@@ -130,14 +131,11 @@ class LEAP_Buttons:
                 command = tkinter_frame.average,
                 text = "average")
         tkinter_frame.square_button = ctk.CTkButton(master = tkinter_frame.b2_frame,
-                command = tkinter_frame.raiseto,
+                command = lambda: tkinter_frame.button_handler("power", [2], 0),
                 text = u"f\u00B2")
         tkinter_frame.basic_isat_button = ctk.CTkButton(master = tkinter_frame.b3_frame,
-                command = tkinter_frame.basic_isat,
+                command = lambda: tkinter_frame.button_handler("ion_saturation_basic", [], 0),
                 text = "basic isat")
-        tkinter_frame.basic_isat_button_auto = ctk.CTkButton(master = tkinter_frame.b3_frame,
-                command = tkinter_frame.basic_isat_auto,
-                text = "basic isat auto")
         tkinter_frame.savgol_button = ctk.CTkButton(master = tkinter_frame.b1_frame,
                 command = tkinter_frame.savgol,
                 text = "S-G Filter")
@@ -151,33 +149,33 @@ class LEAP_Buttons:
                 command = tkinter_frame.plasma_potential,
                 text = "plasma potential")
         tkinter_frame.absolute_button = ctk.CTkButton(master = tkinter_frame.b2_frame,
-                command = tkinter_frame.absolute_v,
+                command = lambda: tkinter_frame.button_handler("absolute_value", [], 0),
                 text = "|f|")
         tkinter_frame.natural_log_button = ctk.CTkButton(master = tkinter_frame.b2_frame,
                 command = tkinter_frame.natural,
                 text = "ln f")
         tkinter_frame.oml_button = ctk.CTkButton(master = tkinter_frame.b3_frame,
-                command = tkinter_frame.oml,
+                command = lambda: tkinter_frame.button_handler("oml_theory", [], 1),
                 text = "oml")
         tkinter_frame.d_temp_button = ctk.CTkButton(master = tkinter_frame.b3_frame,
                 command = tkinter_frame.druyvesteyn_temperature,
                 text = "Dtemp")
 
-        tkinter_frame.potential_bounds_1_button = ctk.CTkButton(master = tkinter_frame.normal_plasma_potential_method_frame,
-                command = tkinter_frame.save_bounds_1,
-                text = "Vp bounds 1:")
-        tkinter_frame.potential_bounds_1_label = ctk.CTkLabel(master = tkinter_frame.normal_plasma_potential_method_frame,
-                textvariable= tkinter_frame.bounds1)
-        tkinter_frame.potential_bounds_2_button = ctk.CTkButton(master = tkinter_frame.normal_plasma_potential_method_frame,
-                command = tkinter_frame.save_bounds_2,
-                text = "Vp bounds 2:")
-        tkinter_frame.potential_bounds_2_label = ctk.CTkLabel(master = tkinter_frame.normal_plasma_potential_method_frame,
-                textvariable= tkinter_frame.bounds2)
-        tkinter_frame.normal_potential_button = ctk.CTkButton(master = tkinter_frame.normal_plasma_potential_method_frame,
-                command = tkinter_frame.normal_potential,
-                text = "NVp:")
-        tkinter_frame.normal_potential_label = ctk.CTkLabel(master = tkinter_frame.normal_plasma_potential_method_frame,
-                textvariable= tkinter_frame.normal_vp)
+        #tkinter_frame.potential_bounds_1_button = ctk.CTkButton(master = tkinter_frame.normal_plasma_potential_method_frame,
+        #        command = tkinter_frame.save_bounds_1,
+        #        text = "Vp bounds 1:")
+        #tkinter_frame.potential_bounds_1_label = ctk.CTkLabel(master = tkinter_frame.normal_plasma_potential_method_frame,
+        #        textvariable= tkinter_frame.bounds1)
+        #tkinter_frame.potential_bounds_2_button = ctk.CTkButton(master = tkinter_frame.normal_plasma_potential_method_frame,
+        #        command = tkinter_frame.save_bounds_2,
+        #        text = "Vp bounds 2:")
+        #tkinter_frame.potential_bounds_2_label = ctk.CTkLabel(master = tkinter_frame.normal_plasma_potential_method_frame,
+        #        textvariable= tkinter_frame.bounds2)
+        #tkinter_frame.normal_potential_button = ctk.CTkButton(master = tkinter_frame.normal_plasma_potential_method_frame,
+        #        command = tkinter_frame.normal_potential,
+        #        text = "NVp:")
+        #tkinter_frame.normal_potential_label = ctk.CTkLabel(master = tkinter_frame.normal_plasma_potential_method_frame,
+        #        textvariable= tkinter_frame.normal_vp)
 
         tkinter_frame.fit_counter = ctk.CTkLabel(master = tkinter_frame.cursor_frame, textvariable= tkinter_frame.fit_bound[0])
         tkinter_frame.fit_counter_2 = ctk.CTkLabel(master = tkinter_frame.cursor_frame, textvariable= tkinter_frame.fit_bound[1])
@@ -196,8 +194,9 @@ class LEAP_Buttons:
 
         tkinter_frame.select_all_label = ctk.CTkLabel(master = tkinter_frame.select_all_frame, text = "Select All:")
         tkinter_frame.open_help_and_options_button = ctk.CTkButton(master = tkinter_frame.adding_frame,
-                command = tkinter_frame.open_help_and_options,
+                command = lambda: Options.Options(tkinter_frame),
                 text = "settings")
         tkinter_frame.hide_button = ctk.CTkButton(master = tkinter_frame.b4_frame,
                 command = tkinter_frame.hide_graph,
                 text = "hide")
+        

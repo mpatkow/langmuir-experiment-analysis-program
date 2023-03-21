@@ -3,8 +3,8 @@ import math
 from scipy.signal import savgol_filter
 
 class data_manipulator:
-    def __init__(self):
-        pass
+    def __init__(self, tkinter_frame):
+        self.tkinter_frame = tkinter_frame
 
     def derivative(self, data, order):
         derivatives = [data[1]]
@@ -64,9 +64,15 @@ class data_manipulator:
     def ion_saturation_primitive(self, data):
         return data[1][0]
 
-    def ion_saturation_basic(self, data, isat_guess_lower, isat_guess_upper):
-        m,b = np.polyfit(data[0][isat_guess_lower:isat_guess_upper], data[1][isat_guess_lower:isat_guess_upper], 1)
-        return m*data[0] + b, data[1] - m*data[0] -b
+    def ion_saturation_basic(self, fname, options_list):
+        [lower_abs, upper_abs] = self.tkinter_frame.get_cursor_values(fname, self.tkinter_frame.currently_displayed)
+        data = self.tkinter_frame.currently_displayed[fname]
+        m,b = np.polyfit(data[0][lower_abs:upper_abs] , data[1][lower_abs:upper_abs], 1)
+        xvalues = self.tkinter_frame.currently_displayed[fname][0]
+        to_return = [[xvalues, data[1] - m*data[0] - b]]
+        if self.tkinter_frame.ecurr_view:
+            to_return.append([xvalues, m*data[0] + b])
+        return to_return
 
     def savgol_smoothing(self, data, o1, o2):
         return savgol_filter(data[1],o1,o2)
@@ -98,36 +104,42 @@ class data_manipulator:
         i = np.argmax(data_der[1])
         return data[0][i]
 
-    def absolute_val(self, data):
-        return [data[0], np.absolute(data[1])]
 
-    def oml_theory(self, data, lower_bound, upper_bound, probe_area, ion_mass):
-        probe_area_m2 = 0.0001 * probe_area
-        m,b = np.polyfit(data[0][lower_bound:upper_bound], data[1][lower_bound:upper_bound], 1)
+    def oml_theory(self, fname, options_list):
+        data = self.tkinter_frame.currently_displayed[fname]
+        [lower_abs, upper_abs] = self.tkinter_frame.get_cursor_values(fname, self.tkinter_frame.currently_displayed)
+
+        probe_area_m2 = 0.0001 * self.tkinter_frame.probe_area
+        m,b = np.polyfit(data[0][lower_abs:upper_abs], data[1][lower_abs:upper_abs], 1)
         vs1 = -b/m
-        Vp = data[0][lower_bound]
-        Ii = data[1][lower_bound] ** 0.5
-        density = np.pi / (2**0.5) * Ii / (probe_area_m2 * 1.60217663 * 10**(-19)) * ion_mass ** 0.5 / (1.60217663 * 10**(-19)*(vs1-Vp))**0.5
-        return density/(10**6)
+        Vp = data[0][lower_abs]
+        Ii = data[1][lower_abs] ** 0.5
+        ion_mass = 6.62*10**(-26)
+        density = np.pi / (2**0.5) * Ii / (probe_area_m2 * 1.60217663 * 10**(-19)) * (ion_mass) ** 0.5 / (1.60217663 * 10**(-19)*(vs1-Vp))**0.5
+        density = density/(10**6)
+    
+        #density = self.data_analyzer.oml_theory(data_t,np.where(lower_abs == np.min(lower_abs))[0][0],np.where(upper_abs == np.min(upper_abs))[0][0],self.probe_area_input.get(),self.ion_mass_input.get())
 
-    def ion_saturation_basic_auto(self, data, tolerance = 0.01):
-        first_smooth = [data[0],self.savgol_smoothing(data,51,3)]
-        first_der = self.derivative(first_smooth, 1)
-        first_der_smooth = [data[0],self.savgol_smoothing(first_der,51,3)]
-        second_der = self.derivative(first_der_smooth, 1)
-        second_der_smooth = [data[0],self.savgol_smoothing(second_der,51,3)]
-        second_der_smooth = [data[0], np.absolute(data[1])]
+        self.tkinter_frame.density.set(density)
+        print(density)
 
-        max_second_der_smooth = np.max(second_der_smooth[1])
-        isat_region = second_der_smooth[1] < tolerance * max_second_der_smooth
+    def power(self, fname, options_list):
+        """
+        Raises the y-values of the data stored in fname to the given power, options_list[0]
+        """
+        data = self.tkinter_frame.currently_displayed[fname]
+        return [[data[0], data[1] ** options_list[0]]]
 
-        # Account for some possible stray data points so you must take longest sequence of trues.
-
-        isat_guess_lower = np.where(isat_region == True)[0][0]
-        isat_guess_upper = np.where(isat_region == True)[0][-1]
-
-        print(isat_guess_lower)
-        print(isat_guess_upper)
-
-        m,b = np.polyfit(data[0][isat_guess_lower:isat_guess_upper], data[1][isat_guess_lower:isat_guess_upper], 1)
-        return m*data[0] + b, data[1] - m*data[0] -b
+    def absolute_value(self, fname, options_list):
+        """
+        Takes the absolute value of the y-values of the data
+        """
+        data = self.tkinter_frame.currently_displayed[fname]
+        return [[data[0], np.absolute(data[1])]]
+    
+    #FIXME incorrect formula
+    def debye_length(self, fname, options_list):
+        """
+        Calculates the debye length of the plasma
+        """
+        

@@ -1,0 +1,56 @@
+def ion_saturation_basic_auto(self, data, tolerance = 0.01):
+    first_smooth = [data[0],self.savgol_smoothing(data,51,3)]
+    first_der = self.derivative(first_smooth, 1)
+    first_der_smooth = [data[0],self.savgol_smoothing(first_der,51,3)]
+    second_der = self.derivative(first_der_smooth, 1)
+    second_der_smooth = [data[0],self.savgol_smoothing(second_der,51,3)]
+    second_der_smooth = [data[0], np.absolute(data[1])]
+
+    max_second_der_smooth = np.max(second_der_smooth[1])
+    isat_region = second_der_smooth[1] < tolerance * max_second_der_smooth
+
+    # Account for some possible stray data points so you must take longest sequence of trues.
+
+    isat_guess_lower = np.where(isat_region == True)[0][0]
+    isat_guess_upper = np.where(isat_region == True)[0][-1]
+
+    print(isat_guess_lower)
+    print(isat_guess_upper)
+
+    m,b = np.polyfit(data[0][isat_guess_lower:isat_guess_upper], data[1][isat_guess_lower:isat_guess_upper], 1)
+    return m*data[0] + b, data[1] - m*data[0] -b
+
+    #PRELIM FIX, NOT CHECKED	
+    def normal_potential(self):
+        if self.check_selected_files() == 1:
+            try:
+                a1 = self.bounds[0].get()
+                a2 = self.bounds[1].get()
+                b1 = self.bounds[2].get()
+                b2 = self.bounds[3].get()
+            except:
+                self.open_popup("plasma potential fit bounds not set properly", "yellow", "NOTICE")
+
+            fname = self.get_selected()[0]
+            data_t = self.currently_displayed[fname]
+            m1,intercept1 = np.polyfit(data_t[0][a1:a2], data_t[1][a1:a2], 1)
+            m2,intercept2 = np.polyfit(data_t[0][b1:b2], data_t[1][b1:b2], 1)
+            self.normal_vp.set((intercept2-intercept1)/(m1-m2))
+    def save_bounds_1(self):
+        fname = self.get_selected()[0]
+        cvalues = self.get_cursor_values(fname, self.currently_displayed)
+        self.bounds[0].set(cvalues[0])
+        self.bounds[1].set(cvalues[1])
+        self.bounds1.set(value = str(int(self.currently_displayed[fname][0][self.bounds[0].get()])) + " to " + str(int(self.currently_displayed[fname][0][self.bounds[1].get()])))
+
+    def save_bounds_2(self):
+        fname = self.get_selected()[0]
+        cvalues = self.get_cursor_values(fname, self.currently_displayed)
+        self.bounds[2].set(cvalues[0])
+        self.bounds[3].set(cvalues[1])
+        self.bounds2.set(value = str(int(self.currently_displayed[fname][0][self.bounds[2].get()])) + " to " + str(int(self.currently_displayed[fname][0][self.bounds[3].get()])))
+
+
+
+
+
