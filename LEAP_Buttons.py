@@ -62,9 +62,6 @@ class LEAP_Buttons:
         tkinter_frame.trim_button = ctk.CTkButton(master = tkinter_frame.b4_frame,
                 command = tkinter_frame.trim,
                 text = "trim")
-        tkinter_frame.dropdown_test = ctk.CTkOptionMenu(master = tkinter_frame.adding_frame,
-                values = ["zoom", "pan"],
-                command = tkinter_frame.dropdown_test_function)
 
 
         tkinter_frame.cursor_label = ctk.CTkLabel(master = tkinter_frame.cursor_frame, text = "Cursors:")
