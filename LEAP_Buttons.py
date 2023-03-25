@@ -21,16 +21,8 @@ class LEAP_Buttons:
                 width = 30)
         tkinter_frame.floating_label = ctk.CTkLabel(master = tkinter_frame.floating_frame,
                 textvariable = tkinter_frame.floating_potential)
-        tkinter_frame.debye_frame = ctk.CTkFrame(master = tkinter_frame.results_frame)
-        tkinter_frame.debye_button = ctk.CTkButton(master = tkinter_frame.debye_frame,
-                command = tkinter_frame.debye,
-                text = u"\u03BB debye",
-                height = 30,
-                width = 30)
-        tkinter_frame.debye_label = ctk.CTkLabel(master = tkinter_frame.debye_frame,
-                textvariable= tkinter_frame.debye_length)
 
-        tkinter_frame.basic_density_sef = sef.SmartEnterField(tkinter_frame.results_frame, "bdense", u" m\u207B\u00B3", tkinter_frame.basic_density)
+        tkinter_frame.basic_density_sef = sef.SmartEnterField(tkinter_frame.results_frame, "bdense", u" m\u207B\u00B3", lambda: tkinter_frame.button_handler("basic_density", [], 1))
         tkinter_frame.probe_area_sef = sef.SmartEnterField(tkinter_frame.results_frame, "probe area", u" cm \u00B2", tkinter_frame.probe_area_update)
 
         tkinter_frame.console = ctk.CTkTextbox(master = tkinter_frame.console_frame,state="disabled")
@@ -60,7 +52,7 @@ class LEAP_Buttons:
                 command = lambda: tkinter_frame.change_scrolling_mode("pan"),
                 text = "pan")
         tkinter_frame.trim_button = ctk.CTkButton(master = tkinter_frame.b4_frame,
-                command = tkinter_frame.trim,
+                command = lambda: tkinter_frame.button_handler("trim", [], 0),
                 text = "trim")
 
 

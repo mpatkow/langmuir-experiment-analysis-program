@@ -5,6 +5,8 @@ from scipy.signal import savgol_filter
 class data_manipulator:
     def __init__(self, tkinter_frame):
         self.tkinter_frame = tkinter_frame
+        self.ELEM_CHARGE = 1.60217663 * 10 ** (-19)
+
 
     def derivative(self, data, order):
         derivatives = [data[1]]
@@ -99,7 +101,10 @@ class data_manipulator:
 
         return (2.0/3.0) * 1/total_area * numerator_integral
 
-    def plasma_potential(self, data):
+    def plasma_potential_derivative_method(self, data):
+        """
+        Returns the plasma potential as found by the maximum of dV
+        """
         data_der = self.derivative(data, 1)
         i = np.argmax(data_der[1])
         return data[0][i]
@@ -136,10 +141,32 @@ class data_manipulator:
         """
         data = self.tkinter_frame.currently_displayed[fname]
         return [[data[0], np.absolute(data[1])]]
-    
-    #FIXME incorrect formula
-    def debye_length(self, fname, options_list):
-        """
-        Calculates the debye length of the plasma
-        """
         
+    def trim(self, fname, options_list):
+        """
+        Returns the data, trimmed between the cursors
+        """
+        data = self.tkinter_frame.currently_displayed[fname]
+        [xmin, xmax] = self.tkinter_frame.get_cursor_values(fname, data)
+        return [[data[0][xmin:xmax], data[1][xmin:xmax]]]
+
+    def basic_density(self, fname, options_list):
+        """
+        Calculates the electron density based on the following formula:
+
+        n_e = (isat_value)/(elementary_charge * probe_area * exp(-1/2)) * sqrt(M/(elementary_charge * temperature (in ev)))
+        
+        
+        old formula was implemented as, incorrectly:
+        ne = isat_value/(self.elementary_charge * self.probe_area * 10**(-3)) * (self.gas_type * 2 * math.pi / (float(input("Temperature: ")) * self.elementary_charge) ) ** 0.5
+
+        M is the ion mass, in kg
+        isat_value is the tenth current value in the data
+
+        based on https://davidpace.com/example-of-langmuir-probe-analysis/
+        """
+        data = self.tkinter_frame.currently_displayed[fname]
+        isat_value = abs(data[1][10])
+
+        electron_density = isat_value/(self.ELEM_CHARGE * self.tkinter_frame.probe_area * 0.60653066) * math.sqrt(self.tkinter_frame.gas_type / (float(input("Temperature: ")) * self.ELEM_CHARGE))
+        return electron_density

@@ -54,3 +54,35 @@ def ion_saturation_basic_auto(self, data, tolerance = 0.01):
 
 
 
+    #FIXME incorrect formula
+    def debye_length(self, fname, options_list):
+        """
+        Calculates the debye length of the plasma
+    
+        Makes a crude estimate to isat, as the tenth current value from the left
+        """
+        data = self.tkinter_frame.currently_displayed[fname]
+        
+        isat_value = abs(data[1][10])
+
+        ne = isat_value/(self.elementary_charge * self.probe_area * 10**(-3)) * (self.gas_type * 2 * math.pi / (float(input("Temperature: ")) * self.elementary_charge) ) ** 0.5
+
+
+
+
+
+
+     tkinter_frame.debye_frame = ctk.CTkFrame(master = tkinter_frame.results_frame)
+        tkinter_frame.debye_button = ctk.CTkButton(master = tkinter_frame.debye_frame,
+                command = tkinter_frame.debye,
+                text = u"\u03BB debye",
+                height = 30,
+                width = 30)
+        tkinter_frame.debye_label = ctk.CTkLabel(master = tkinter_frame.debye_frame,
+                textvar   
+
+
+
+
+
+
