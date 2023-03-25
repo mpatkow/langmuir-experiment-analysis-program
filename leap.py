@@ -1,6 +1,6 @@
+"""Main prgram for the Langmuir Experiment Analysis Program (LEAP)"""
 import tkinter as tk
 import re
-import math
 from tkinter.filedialog import asksaveasfilename
 import customtkinter as ctk
 from scipy import interpolate as itp
@@ -12,17 +12,21 @@ import LEAP_Buttons
 import Widget_Redrawer
 
 class App(ctk.CTk):
+    """LEAP APPLICATION"""
+    # TODO STANDARDIZE PROBE AREA TO BE STORED IN m3
+    # TODO make each sweep be its own instance, with its own parameters such as temp, etc.
     def __init__(self):
         super().__init__()
 
         ctk.set_appearance_mode("Dark")	     # Modes: system (default), light, dark
         ctk.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
-        plt.style.use("default")             # Many other themes available, check matplotlib documentation
+        plt.style.use("default")             # Many other themes available, check documentation
 
         try:
-            option_file = open("options.txt", "r")
+            option_file = open("options.txt", "r", encoding="utf-8")
             self.options = [l.split("\t")[1][:-1] for l in option_file.readlines()]
             option_file.close()
+            self.gas_type				   = float(self.options[3])/(10**3 * 6.023 * 10**23) # The atomic mass of the element is entered in options.txt
         except:
             print("options file corrupted, run repair_options in the LEAP console to restore to default")
             self.options = [5]
@@ -51,16 +55,11 @@ class App(ctk.CTk):
         self.debye_length			   = tk.DoubleVar()
         self.density					= tk.DoubleVar()
         self.probe_area				 = 0 
-        try:
-            self.gas_type				   = float(self.options[3])/(10**3 * 6.023 * 10**23) # The atomic mass of the element is entered in options.txt
-        except:
-            print("options file corrupted, run repair_options in the program console to restore to default")
         self.probe_radius			   = tk.DoubleVar()
         self.normal_vp				  = tk.DoubleVar()
         self.bounds					 = [tk.IntVar(value=0),tk.IntVar(value=0),tk.IntVar(value=0),tk.IntVar(value=0)]
         self.bounds1					= tk.StringVar(value = str(self.bounds[0].get()) + " to " + str(self.bounds[1].get()))
         self.bounds2					= tk.StringVar(value = str(self.bounds[2].get()) + " to " + str(self.bounds[3].get()))
-        self.elementary_charge          = 1.60217663 * 10 ** (-19)
         self.ecurr_view					= False
         self.console_input_var              = tk.StringVar()
         self.valid_commands = {}
@@ -198,20 +197,6 @@ class App(ctk.CTk):
 
             eval(cmd)
 
-
-    def basic_density(self):
-        fname = self.get_selected()[0]
-        isat_value = abs(self.currently_displayed[fname][1][10])
-        #ne = isat_value/(self.elementary_charge * self.probe_area * 10**(-3)) * (self.gas_type * 2 * math.pi / (float(self.temperature.get().split(' ')[0]) * self.elementary_charge) ) ** 0.5
-        ne = isat_value/(self.elementary_charge * self.probe_area * 10**(-3)) * (self.gas_type * 2 * math.pi / (float(input("Temperature: ")) * self.elementary_charge) ) ** 0.5
-        print(ne)
-
-        #fname = self.get_selected()[0]
-        #newfname = self.get_next_name(fname)
-        #data = self.data_analyzer.average(data_to_average)
-        #self.add_graph(newfname, data[0], data[1])
-
-
     #FIXED
     def probe_area_update(self):
         try:
@@ -333,11 +318,6 @@ class App(ctk.CTk):
                     for function in list(returned_functions):
                         self.add_graph(self.get_next_name(fname), function[0], function[1])
 
-
-    def debye(self):
-        l_squared = 8.8541878128*10**(-12)*float(self.temperature.get().split(' ')[0])/(1.60217663*10**(-19) * float(self.density.get()) * 10**6)
-        self.debye_length.set(l_squared ** 0.5)
-
     def floating(self):
         if self.check_selected_files() == 1:
             fname = self.get_selected()[0]
@@ -395,16 +375,6 @@ class App(ctk.CTk):
             if self.selector_display[key][0].winfo_children()[1].get() == 1:
                 selected.append(key)
         return selected
-
-    def trim(self):
-        if len(self.get_selected()) == 0:
-            self.open_popup("no file selected", "yellow", "NOTICE")
-        else:
-            fname = self.get_selected()[0]
-            data_t = self.currently_displayed[fname]
-            [xmin, xmax] = self.get_cursor_values(fname, data_t)
-            newfname = self.get_next_name(fname)
-            self.add_graph(newfname, self.currently_displayed[fname][0][xmin:xmax], self.currently_displayed[fname][1][xmin:xmax])
 
     def box_average(self):
         if len(self.get_selected()) == 0:
@@ -526,19 +496,6 @@ class App(ctk.CTk):
             except KeyError:
                 print("\a")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     def open_popup(self,message,color,name):
         self.console.configure(state="normal")
         if color == "red":
@@ -555,14 +512,8 @@ class App(ctk.CTk):
         for fname in fnames:
             if fname not in self.selector_display.keys():
                 [x,y] = self.get_data(fname)
-                try:
-                    if x == None or y == None:
-                        pass
-                    else:
-                        self.add_graph(fname, x, y)
-                except:
+                if x is not None and y is not None:
                     self.add_graph(fname, x, y)
-
             else:
                 self.open_popup("file already opened", "yellow", "NOTICE")
 
@@ -608,8 +559,7 @@ class App(ctk.CTk):
         splittedfname = f.split("/")[-1]
         if self.next_index == 0:
             label = ctk.CTkLabel(master = file_frame, text = splittedfname)
-        else: 
-            label = ctk.CTkLabel(master = file_frame, text = splittedfname)
+
         cb = ctk.CTkCheckBox(master = file_frame, text = "", variable = cb_value)
 
         self.selector_display.update({f: [file_frame,cb_value]})
@@ -623,6 +573,7 @@ class App(ctk.CTk):
         label.grid(row=0, column=0)
         cb.grid(row=0, column=1)
 
+    # TODO Can be improved to O(n)
     def update_next_index(self):
         indexes = list(self.graph_indexes.values())
         indexes.sort()
