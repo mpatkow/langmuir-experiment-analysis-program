@@ -86,3 +86,87 @@ def ion_saturation_basic_auto(self, data, tolerance = 0.01):
 
 
 
+
+
+
+    def console_input_receive(self):
+        self.console.configure(state="normal")
+        self.console_command(self.console_input_var.get())
+        self.console.insert(tk.END, "> " + self.console_input_var.get() + "\n")
+        self.console_input_var.set("")
+        self.console.see("end")
+        self.console.configure(state="disabled")
+
+    # TODO: Add the commands to a file
+    # FIXME: commands broken with the new button handling method
+    def add_commands(self):
+        self.valid_commands["explorer"] = ["file_browser", [], []]
+        self.valid_commands["savgol"] = [
+            "savgol", ["winlen", "polyorder"], [53, 3]]
+        self.valid_commands["boxav"] = ["box_average", [], []]
+        self.valid_commands["spline"] = ["spline_extrapolate", ["p"], [1000]]
+        self.valid_commands["average"] = ["average", [], []]
+        self.valid_commands["repair_options"] = ["fix_options", [], []]
+        self.valid_commands["delete"] = ["delete_file", [], []]
+        self.valid_commands["zoom"] = ["zoomfunc", [], []]
+        self.valid_commands["pan"] = ["panfunc", [], []]
+        self.valid_commands["save"] = ["save_data", [], []]
+        self.valid_commands["saveimage"] = ["save_image_data", [], []]
+        self.valid_commands["settings"] = ["open_help_and_options", [], []]
+        self.valid_commands["derivative"] = ["derivative", ["o"], [1]]
+        self.valid_commands["power"] = ["raiseto", ["o"], [2]]
+        self.valid_commands["abs"] = ["absolute_v", [], []]
+        self.valid_commands["rescale"] = ["rescale", [], []]
+        self.valid_commands["isat"] = ["basic_isat", [], []]
+        self.valid_commands["ln"] = ["natural", [], []]
+        self.valid_commands["trim"] = ["trim", [], []]
+        self.valid_commands["hide"] = ["hide_graph", [], []]
+        self.valid_commands["gettemp"] = ["temperature_value", [], []]
+        self.valid_commands["settemp"] = ["set_temp", ["t"], [0]]
+
+
+
+
+        def get_option_values(self, command):
+        # needs ERROR messages
+        command_name = command.split(" ")[0]
+        command_options_and_values = {}
+        for command_chunk in command.split("-")[1:]:
+            command_options_and_values[command_chunk.split()[0]] = command_chunk.split()[
+                1:]
+        return command_name, command_options_and_values
+
+    def console_command(self, ctxt):
+        cn, co = self.get_option_values(ctxt)
+        if cn in self.valid_commands:
+            fixed_options = self.valid_commands[cn][2][:]
+            for o in co.keys():
+                try:
+                    ii = self.valid_commands[cn][1].index(o)
+                    fixed_options[ii] = co[o][0]
+                except:
+                    print("not a valid optoin")
+
+            cmd = "self."
+            cmd += self.valid_commands[cn][0]
+            cmd += "("
+            for o in fixed_options:
+                cmd += str(o)
+                cmd += ","
+            if cmd[-1] == ",":
+                cmd = cmd[:-1]
+            cmd += ")"
+
+            eval(cmd)
+
+
+
+
+
+    def probe_area_update(self):
+        try:
+            self.probe_area = self.probe_area_sef.get_value()
+            print("Set the probe area to: %f square cm." % self.probe_area)
+        except:
+            self.open_popup("No value entered for probe area",
+                            "yellow", "NOTICE")
