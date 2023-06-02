@@ -110,15 +110,17 @@ class data_manipulator:
         return to_return
 
     # TODO not working
-    def druyvesteyn_eedf(self):
+    # TODO eed to change other functions to accept daata as opposed to graph
+    def druyvesteyn_eedf(self, graph, options):
         """
         Returns the EEDF as found by the druyesteyn method
         """
-        max_index = np.argmin(np.abs(data[0]-vp))
-        trimmed_probe_biases = data[0][0:max_index]
-        new_current_data = np.flip(data[1][0:max_index])
+        vp = input("VP: ")
+        max_index = np.argmin(np.abs(graph.data[0]-vp))
+        trimmed_probe_biases = graph.data[0][0:max_index]
+        new_current_data = np.flip(graph.data[1][0:max_index])
         electron_energy = np.flip(vp - trimmed_probe_biases)
-        first_der = self.derivative([trimmed_probe_biases, new_current_data],1)
+        first_der = self.derivative(graph,1)
         first_der_smoothed = self.savgol_smoothing(first_der,51,3)
         second_der = self.derivative([trimmed_probe_biases, first_der_smoothed],1)
         return electron_energy, np.multiply(second_der[1], np.sqrt(electron_energy)) * (9.1093837 * 10**(-31)) ** (0.5) * 2 * math.sqrt(2) / ((1.60217663 * 10**(-19)) **2 * probe_area)
