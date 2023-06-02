@@ -1,5 +1,5 @@
+"""Buttons and Widgets for the LEAP"""
 import customtkinter as ctk
-import tkinter as tk
 import SmartEnterField as sef
 import Options
 
@@ -8,22 +8,22 @@ class LEAP_Buttons:
         """ RESULTS FRAMES """
 
         tkinter_frame.temperature_button = ctk.CTkButton(master = tkinter_frame.b3_frame,
-                command = tkinter_frame.temp_fit,
+                command = lambda: tkinter_frame.button_handler("temperature_fit", [], 3),
                 text = "temp fit")
         tkinter_frame.temperature_label = ctk.CTkLabel(master = tkinter_frame.temperature_frame,
                 textvariable = tkinter_frame.temperature)
 
-        tkinter_frame.floating_frame = ctk.CTkFrame(master = tkinter_frame.results_frame)
-        tkinter_frame.floating_potential_button = ctk.CTkButton(master = tkinter_frame.floating_frame,
-                command = tkinter_frame.floating,
+        #tkinter_frame.floating_frame = ctk.CTkFrame(master = tkinter_frame.b3_frame)
+        tkinter_frame.floating_potential_button = ctk.CTkButton(master = tkinter_frame.b3_frame,
+                command = lambda: tkinter_frame.button_handler("floating_potential", [], 3),
                 text = "Vf",
                 height = 30,
                 width = 30)
-        tkinter_frame.floating_label = ctk.CTkLabel(master = tkinter_frame.floating_frame,
-                textvariable = tkinter_frame.floating_potential)
+        #tkinter_frame.floating_label = ctk.CTkLabel(master = tkinter_frame.floating_frame,
+        #       textvariable = tkinter_frame.floating_potential)
 
         tkinter_frame.basic_density_sef = sef.SmartEnterField(tkinter_frame.results_frame, "bdense", u" m\u207B\u00B3", lambda: tkinter_frame.button_handler("basic_density", [], 1))
-        tkinter_frame.probe_area_sef = sef.SmartEnterField(tkinter_frame.results_frame, "probe area", u" cm \u00B2", tkinter_frame.probe_area_update)
+        tkinter_frame.probe_area_sef = sef.SmartEnterField(tkinter_frame.results_frame, "probe area", u" cm \u00B2", lambda: print("Not avaialable ATM"))
 
         tkinter_frame.console = ctk.CTkTextbox(master = tkinter_frame.console_frame,state="disabled")
         tkinter_frame.console_input = ctk.CTkEntry(master = tkinter_frame.console_input_frame, textvariable = tkinter_frame.console_input_var) 
@@ -34,16 +34,16 @@ class LEAP_Buttons:
         """ ADDING FRAME """
 
         tkinter_frame.explorer_button = ctk.CTkButton(master = tkinter_frame.adding_frame,
-                command = tkinter_frame.file_browser,
+                command = tkinter_frame.FM.file_browser,
                 text = "file explorer")
         tkinter_frame.deletion_button = ctk.CTkButton(master = tkinter_frame.adding_frame,
-                command = tkinter_frame.delete_file,
+                command = tkinter_frame.FM.delete_file,
                 text = "delete")
         tkinter_frame.save_button = ctk.CTkButton(master = tkinter_frame.adding_frame,
-                command = tkinter_frame.save_data,
+                command = tkinter_frame.FM.save_data,
                 text = "save data")
         tkinter_frame.save_image_button = ctk.CTkButton(master = tkinter_frame.adding_frame,
-                command = tkinter_frame.save_image_data,
+                command = tkinter_frame.FM.save_image_data,
                 text = "save image")
         tkinter_frame.zoom_button = ctk.CTkButton(master = tkinter_frame.adding_frame,
                 command = lambda: tkinter_frame.change_scrolling_mode("zoom"),
@@ -101,7 +101,7 @@ class LEAP_Buttons:
                 command = tkinter_frame.rescale,
                 text = "rescale")
         tkinter_frame.derivative_button = ctk.CTkButton(master = tkinter_frame.b2_frame,
-                command = tkinter_frame.derivative,
+                command = lambda: tkinter_frame.button_handler("derivative", [1], 0),
                 text = "f'")
         tkinter_frame.scale_button = ctk.CTkButton(master = tkinter_frame.adding_frame,
                 command = tkinter_frame.toggle_graph_scale,
@@ -110,14 +110,14 @@ class LEAP_Buttons:
                 command = tkinter_frame.toggle_legend,
                 text = "legend")
         tkinter_frame.box_button = ctk.CTkButton(master = tkinter_frame.b1_frame,
-                command = tkinter_frame.box_average,
+                command = lambda: tkinter_frame.button_handler("box_average", [], 0),
                 text = "box average")
         tkinter_frame.select_all_button = ctk.CTkCheckBox(master = tkinter_frame.select_all_frame,
-                command = tkinter_frame.all,
-                variable = tkinter_frame.select_all,
+                command = tkinter_frame.FM.select_all_graphs,
+                variable = tkinter_frame.FM.select_all,
                 text = "")
         tkinter_frame.average_button = ctk.CTkButton(master = tkinter_frame.b1_frame,
-                command = tkinter_frame.average,
+                command = tkinter_frame.data_analyzer.average,
                 text = "average")
         tkinter_frame.square_button = ctk.CTkButton(master = tkinter_frame.b2_frame,
                 command = lambda: tkinter_frame.button_handler("power", [2], 0),
@@ -126,29 +126,32 @@ class LEAP_Buttons:
                 command = lambda: tkinter_frame.button_handler("ion_saturation_basic", [], 0),
                 text = "basic isat")
         tkinter_frame.savgol_button = ctk.CTkButton(master = tkinter_frame.b1_frame,
-                command = tkinter_frame.savgol,
+                command = lambda: tkinter_frame.button_handler("savgol", [53,3], 0),
                 text = "S-G Filter")
         tkinter_frame.spline_button = ctk.CTkButton(master = tkinter_frame.b1_frame,
-                command = tkinter_frame.spline_extrapolate,
+                command = lambda: tkinter_frame.button_handler("spline_extrapolate", [1000], 0),
                 text = "spline")
         tkinter_frame.eedf_button = ctk.CTkButton(master = tkinter_frame.b3_frame,
-                command = tkinter_frame.eedf,
+                command = lambda: tkinter_frame.button_handler("druyvesteyn_eedf", [], 0),
                 text = "EEDF")
         tkinter_frame.plasma_potential_button = ctk.CTkButton(master= tkinter_frame.b3_frame,
-                command = tkinter_frame.plasma_potential,
+                command = lambda: tkinter_frame.button_handler("plasma_potential_derivative_method", [], 3),
                 text = "plasma potential")
         tkinter_frame.absolute_button = ctk.CTkButton(master = tkinter_frame.b2_frame,
                 command = lambda: tkinter_frame.button_handler("absolute_value", [], 0),
                 text = "|f|")
         tkinter_frame.natural_log_button = ctk.CTkButton(master = tkinter_frame.b2_frame,
-                command = tkinter_frame.natural,
+                command = lambda: tkinter_frame.button_handler("natural_logarithm", [], 0),
                 text = "ln f")
         tkinter_frame.oml_button = ctk.CTkButton(master = tkinter_frame.b3_frame,
                 command = lambda: tkinter_frame.button_handler("oml_theory", [], 1),
                 text = "oml")
         tkinter_frame.d_temp_button = ctk.CTkButton(master = tkinter_frame.b3_frame,
-                command = tkinter_frame.druyvesteyn_temperature,
+                command = lambda: print("Not implemented yet"),
                 text = "Dtemp")
+        tkinter_frame.floating_potential_button = ctk.CTkButton(master = tkinter_frame.b3_frame,
+                command = lambda: tkinter_frame.button_handler("floating_potential", [], 3),
+                text = "Vf")
 
         #tkinter_frame.potential_bounds_1_button = ctk.CTkButton(master = tkinter_frame.normal_plasma_potential_method_frame,
         #        command = tkinter_frame.save_bounds_1,
@@ -186,6 +189,5 @@ class LEAP_Buttons:
                 command = lambda: Options.Options(tkinter_frame),
                 text = "settings")
         tkinter_frame.hide_button = ctk.CTkButton(master = tkinter_frame.b4_frame,
-                command = tkinter_frame.hide_graph,
+                command = tkinter_frame.FM.hide_graphs,
                 text = "hide")
-        

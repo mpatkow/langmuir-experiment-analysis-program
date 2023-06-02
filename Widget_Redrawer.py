@@ -57,7 +57,7 @@ class Widget_Redrawer:
         self_of_parent.cursor_frame.grid_columnconfigure(5, weight = 1)
         self_of_parent.cursor_label.grid(row=0, column=3, sticky = "nswe")
         px = 2
-        py = 2 
+        py = 2
         self_of_parent.minus_button_l.grid(row=1,column=0, sticky = "nswe",padx=px,pady=py)
         self_of_parent.minus_button.grid(row=1,column=1, sticky = "nswe",padx=px,pady=py)
         self_of_parent.plus_button.grid(row=1,column=3, sticky = "nswe",padx=px,pady=py)
@@ -110,6 +110,7 @@ class Widget_Redrawer:
         self_of_parent.plasma_potential_button.pack(pady=vpad)
         self_of_parent.oml_button.pack(pady=vpad)
         self_of_parent.d_temp_button.pack(pady=vpad)
+        self_of_parent.floating_potential_button.pack(pady=vpad)
 
         # SMOOTHING
         self_of_parent.sorting_label_4.pack(pady=vpad)
