@@ -5,7 +5,7 @@ class Widget_Redrawer:
         self_of_parent.adding_frame.pack(fill=tk.X)
         self_of_parent.main_frame.pack(fill=tk.BOTH,expand=True)
 
-        self_of_parent.main_frame.grid_columnconfigure(0,weight=4)
+        self_of_parent.main_frame.grid_columnconfigure(0,weight=50)
         self_of_parent.main_frame.grid_columnconfigure(1,weight=1)
         self_of_parent.main_frame.grid_columnconfigure(2,weight=2)
         self_of_parent.main_frame.grid_rowconfigure(0,weight=1)

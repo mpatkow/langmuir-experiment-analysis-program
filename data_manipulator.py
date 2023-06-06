@@ -10,6 +10,7 @@ class data_manipulator:
     def __init__(self, tkinter_frame):
         self.tkinter_frame = tkinter_frame
         self.ELEM_CHARGE = 1.60217663 * 10 ** (-19)
+        self.AVOGADRO_CONSTANT = 6.022 * 10 ** (23)
         warnings.simplefilter(action='ignore', category=RuntimeWarning)
 
     def derivative(self, graph, options):
@@ -146,22 +147,26 @@ class data_manipulator:
         return graph.data[0][i]
 
     # TODO not fixed yet
-    def oml_theory(self, fname, options_list):
-        data = self.tkinter_frame.currently_displayed[fname]
-        [lower_abs, upper_abs] = self.tkinter_frame.get_cursor_values(fname, self.tkinter_frame.currently_displayed)
+    def oml_theory(self, graph, options_list):
+        """
+        probe_area needs to be in m2
+        selected graph needs to be the f^2 graph
+        """
+        [lower_abs, upper_abs] = self.tkinter_frame.get_cursor_values(graph)
 
-        probe_area_m2 = 0.0001 * self.tkinter_frame.probe_area
-        m,b = np.polyfit(data[0][lower_abs:upper_abs], data[1][lower_abs:upper_abs], 1)
-        vs1 = -b/m
-        Vp = data[0][lower_abs]
-        Ii = data[1][lower_abs] ** 0.5
-        ion_mass = 6.62*10**(-26)
-        density = np.pi / (2**0.5) * Ii / (probe_area_m2 * 1.60217663 * 10**(-19)) * (ion_mass) ** 0.5 / (1.60217663 * 10**(-19)*(vs1-Vp))**0.5
-        density = density/(10**6)
-    
+        m,b = np.polyfit(graph.data[0][lower_abs:upper_abs], graph.data[1][lower_abs:upper_abs], 1)
+        vs1 = -b/m                    # Finds the plasma potential by the x-intercept of the fit line of the squared isat.
+        Vp = graph.data[0][lower_abs] # Takes vp to be the lower selection of the graph.
+        
+        ion_mass = float(self.tkinter_frame.options[3]) / 1000 / (self.AVOGADRO_CONSTANT)
+        ion_saturation_current = graph.data[1][lower_abs] ** 0.5 # Crude approximation for the saturation ion current value.
+        density = math.pi / (2**0.5) * ion_saturation_current / (self.tkinter_frame.probe_area * self.ELEM_CHARGE) * (ion_mass) ** 0.5 / (self.ELEM_CHARGE*(vs1-Vp))**0.5
+
         #density = self.data_analyzer.oml_theory(data_t,np.where(lower_abs == np.min(lower_abs))[0][0],np.where(upper_abs == np.min(upper_abs))[0][0],self.probe_area_input.get(),self.ion_mass_input.get())
 
-        self.tkinter_frame.density.set(density)
+        oml_density_statement = f"Density: {density} ??units??"
+
+        self.tkinter_frame.open_popup(oml_density_statement, "", "RESULT")
         print(density)
 
     def power(self, graph, options_list):

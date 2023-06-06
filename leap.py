@@ -8,9 +8,7 @@ import data_manipulator
 import leap_frames
 import leap_widgets
 import Widget_Redrawer
-import file_manager
-
-
+import file_manager 
 class App(ctk.CTk):
     """LEAP APPLICATION"""
     # TODO STANDARDIZE PROBE AREA TO BE STORED IN m3
@@ -60,7 +58,7 @@ class App(ctk.CTk):
         self.floating_potential = tk.DoubleVar()
         self.debye_length = tk.DoubleVar()
         self.density = tk.DoubleVar()
-        self.probe_area = 0
+        self.probe_area = 10**(-2) 
         self.probe_radius = tk.DoubleVar()
         self.normal_vp = tk.DoubleVar()
         self.bounds = [tk.IntVar(value=0), tk.IntVar(
@@ -124,7 +122,8 @@ class App(ctk.CTk):
 
     # TODO make console file/module
     def console_input_receive(self):
-        pass
+        command = self.console_input_var.get()
+        self.console_input_var.set("")
 
     def change_scrolling_mode(self, new_mode):
         """
