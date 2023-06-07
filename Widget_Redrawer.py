@@ -104,13 +104,13 @@ class Widget_Redrawer:
 
         # OPERATIONS
         self_of_parent.sorting_label_3.pack(pady=vpad)
+        self_of_parent.floating_potential_button.pack(pady=vpad)
+        self_of_parent.plasma_potential_button.pack(pady=vpad)
         self_of_parent.basic_isat_button.pack(pady=vpad)
         self_of_parent.temperature_button.pack(pady=vpad)
-        self_of_parent.eedf_button.pack(pady=vpad)
-        self_of_parent.plasma_potential_button.pack(pady=vpad)
         self_of_parent.oml_button.pack(pady=vpad)
-        self_of_parent.d_temp_button.pack(pady=vpad)
-        self_of_parent.floating_potential_button.pack(pady=vpad)
+        #self_of_parent.eedf_button.pack(pady=vpad)
+        #self_of_parent.d_temp_button.pack(pady=vpad)
 
         # SMOOTHING
         self_of_parent.sorting_label_4.pack(pady=vpad)

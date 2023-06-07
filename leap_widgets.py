@@ -9,8 +9,8 @@ class LEAP_Buttons:
 
         tkinter_frame.temperature_button = ctk.CTkButton(master = tkinter_frame.b3_frame,
                 command = lambda: tkinter_frame.button_handler("temperature_fit", [], 3),
-                text = "temp fit",
-                width=10)
+                text = "temp fit"
+                )
         tkinter_frame.temperature_label = ctk.CTkLabel(master = tkinter_frame.temperature_frame,
                 textvariable = tkinter_frame.temperature)
 
@@ -18,8 +18,8 @@ class LEAP_Buttons:
         tkinter_frame.floating_potential_button = ctk.CTkButton(master = tkinter_frame.b3_frame,
                 command = lambda: tkinter_frame.button_handler("floating_potential", [], 3),
                 text = "Vf",
-                height = 30,
-                width = 30)
+                height = 30
+                )
         #tkinter_frame.floating_label = ctk.CTkLabel(master = tkinter_frame.floating_frame,
         #       textvariable = tkinter_frame.floating_potential)
 
@@ -36,12 +36,10 @@ class LEAP_Buttons:
 
         tkinter_frame.explorer_button = ctk.CTkButton(master = tkinter_frame.adding_frame,
                 command = tkinter_frame.FM.file_browser,
-                text = "explorer",
-                width=10)
+                text = "explorer")
         tkinter_frame.deletion_button = ctk.CTkButton(master = tkinter_frame.adding_frame,
                 command = tkinter_frame.FM.delete_file,
-                text = "delete",
-                width=10)
+                text = "delete")
         tkinter_frame.save_button = ctk.CTkButton(master = tkinter_frame.adding_frame,
                 command = tkinter_frame.FM.save_data,
                 text = "save data")
@@ -95,7 +93,7 @@ class LEAP_Buttons:
 
 
         tkinter_frame.sorting_label_1 = ctk.CTkLabel(master = tkinter_frame.b1_frame,text = "Smoothing:")
-        tkinter_frame.sorting_label_2 = ctk.CTkLabel(master = tkinter_frame.b2_frame,text = "Math:",width=10)
+        tkinter_frame.sorting_label_2 = ctk.CTkLabel(master = tkinter_frame.b2_frame,text = "Math:")
         tkinter_frame.sorting_label_3 = ctk.CTkLabel(master = tkinter_frame.b3_frame,text = "Operations:")
         tkinter_frame.sorting_label_4 = ctk.CTkLabel(master = tkinter_frame.b4_frame,text = "Miscellaneous:")
 
@@ -105,8 +103,8 @@ class LEAP_Buttons:
                 text = "rescale")
         tkinter_frame.derivative_button = ctk.CTkButton(master = tkinter_frame.b2_frame,
                 command = lambda: tkinter_frame.button_handler("derivative", [1], 0),
-                text = "f'",
-                width=10)
+                text = "f'")
+                
         tkinter_frame.scale_button = ctk.CTkButton(master = tkinter_frame.adding_frame,
                 command = tkinter_frame.toggle_graph_scale,
                 text = "lin/log")
@@ -125,8 +123,7 @@ class LEAP_Buttons:
                 text = "average")
         tkinter_frame.square_button = ctk.CTkButton(master = tkinter_frame.b2_frame,
                 command = lambda: tkinter_frame.button_handler("power", [2], 0),
-                text = u"f\u00B2",
-                width=10)
+                text = u"f\u00B2")
         tkinter_frame.basic_isat_button = ctk.CTkButton(master = tkinter_frame.b3_frame,
                 command = lambda: tkinter_frame.button_handler("ion_saturation_basic", [], 0),
                 text = "basic isat")
@@ -144,12 +141,10 @@ class LEAP_Buttons:
                 text = "plasma potential")
         tkinter_frame.absolute_button = ctk.CTkButton(master = tkinter_frame.b2_frame,
                 command = lambda: tkinter_frame.button_handler("absolute_value", [], 0),
-                text = "|f|",
-                width=10)
+                text = "|f|")
         tkinter_frame.natural_log_button = ctk.CTkButton(master = tkinter_frame.b2_frame,
                 command = lambda: tkinter_frame.button_handler("natural_logarithm", [], 0),
-                text = "ln f",
-                width=10)
+                text = "ln f")
         tkinter_frame.oml_button = ctk.CTkButton(master = tkinter_frame.b3_frame,
                 command = lambda: tkinter_frame.button_handler("oml_theory", [], 1),
                 text = "oml")
